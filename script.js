@@ -1,3 +1,4 @@
+```js
 const tg = window.Telegram.WebApp;
 tg.ready();
 
@@ -7,22 +8,22 @@ const tracks = [
     id: 1,
     title: 'Трек 1',
     artist: 'Исполнитель 1',
-    cover: 'cover', // можно заменить на URL картинки
-    audioUrl: '/audio/track1.mp3' // путь к файлу в папке audio
+    cover: 'cover',
+    audioUrl: '/audio/track1.mp3'
   },
   {
     id: 2,
-    title: 'Трек 2',
-    artist: 'Исполнитель 2',
+    title: 'Newstar',
+    artist: 'Unknown',
     cover: 'cover',
-    audioUrl: '/audio/track2.mp3'
+    audioUrl: '/audio/newstar.mp3'
   },
   {
     id: 3,
-    title: 'Трек 3',
-    artist: 'Исполнитель 3',
+    title: 'Slikk',
+    artist: 'Unknown',
     cover: 'cover',
-    audioUrl: '/audio/track3.mp3'
+    audioUrl: '/audio/slikk.mp3'
   }
 ];
 
@@ -56,4 +57,4 @@ tracks.forEach(track => {
 function playTrack(url) {
   tg.openLink(url); // открывает аудио в нативном плеере Telegram
 }
-33
+```
