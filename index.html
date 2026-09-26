@@ -1,146 +1,160 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Music Mini App</title>
+<head>
+  <meta charset="UTF-8">
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+  >
 
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background-color: var(--tg-theme-bg-color, #f4f4f4);
-        color: var(--tg-theme-text-color, #333);
-        margin: 0;
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+  <title>Music Mini App</title>
 
-      h1 {
-        color: var(--tg-theme-button-color, #2481cc);
-        margin-top: 0;
-      }
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-      .cards-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-        gap: 15px;
-        width: 100%;
-        max-width: 600px;
-        margin-top: 20px;
-      }
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--tg-theme-bg-color, #f4f4f4);
+      color: var(--tg-theme-text-color, #333);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-      .card {
-        background: var(--tg-theme-secondary-bg-color, #ffffff);
-        border-radius: 12px;
-        padding: 15px;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+    h1 {
+      color: var(--tg-theme-button-color, #2481cc);
+      margin-top: 0;
+    }
 
-      .cover-placeholder {
-        width: 100%;
-        height: 140px;
-        background-color: #eef2f5;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        font-size: 40px;
-      }
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 15px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+    }
 
-      .title {
-        font-weight: bold;
-        margin-bottom: 15px;
-        font-size: 14px;
-      }
+    .card {
+      background: var(--tg-theme-secondary-bg-color, #ffffff);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-      button {
-        background-color: var(--tg-theme-button-color, #2481cc);
-        color: var(--tg-theme-button-text-color, #ffffff);
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        width: 100%;
-      }
+    .cover-placeholder {
+      width: 100%;
+      height: 140px;
+      background-color: #eef2f5;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      font-size: 40px;
+    }
 
-      button:active {
-        opacity: 0.8;
-      }
-    </style>
-  </head>
+    .title {
+      font-weight: bold;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
 
-  <body>
-    <h1 id="greeting"></h1>
+    button {
+      background-color: var(--tg-theme-button-color, #2481cc);
+      color: var(--tg-theme-button-text-color, #ffffff);
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      width: 100%;
+    }
 
-    <div class="cards-container" id="app"></div>
+    button:active {
+      opacity: 0.8;
+    }
+  </style>
+</head>
 
-    <script>
-      const tg = window.Telegram.WebApp;
+<body>
 
-      tg.ready();
+  <h1 id="greeting">Загрузка...</h1>
 
-      const tracks = [
-        {
-          title: 'Трек 1',
-          cover: '🎵'
-        },
-        {
-          title: 'Newstar',
-          cover: '⭐'
-        },
-        {
-          title: 'Slikk',
-          cover: '🔥'
+  <div class="cards-container" id="app">
+    Загрузка треков...
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+
+    const greetingEl = document.getElementById('greeting');
+    const container = document.getElementById('app');
+
+    const user = tg.initDataUnsafe?.user;
+
+    if (user && user.first_name) {
+      greetingEl.textContent = 'Привет, ' + user.first_name + '!';
+    } else {
+      greetingEl.textContent = 'Привет, друг!';
+    }
+
+    fetch('./data.json')
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error('Не удалось загрузить data.json');
         }
-      ];
 
-      const user = tg.initDataUnsafe?.user;
+        return response.json();
+      })
 
-      const greetingEl = document.getElementById('greeting');
-      const container = document.getElementById('app');
+      .then(function(tracks) {
+        container.innerHTML = '';
 
-      if (user && user.first_name) {
-        greetingEl.textContent = 'Привет, ' + user.first_name + '!';
-      } else {
-        greetingEl.textContent = 'Привет, друг!';
-      }
+        tracks.forEach(function(track) {
 
-      tracks.forEach(function(track) {
-        const card = document.createElement('div');
-        card.className = 'card';
+          const card = document.createElement('div');
+          card.className = 'card';
 
-        const cover = document.createElement('div');
-        cover.className = 'cover-placeholder';
-        cover.textContent = track.cover;
+          const cover = document.createElement('div');
+          cover.className = 'cover-placeholder';
+          cover.textContent = track.cover;
 
-        const title = document.createElement('div');
-        title.className = 'title';
-        title.textContent = track.title;
+          const title = document.createElement('div');
+          title.className = 'title';
+          title.textContent = track.title;
 
-        const button = document.createElement('button');
-        button.textContent = 'Слушать';
+          const button = document.createElement('button');
+          button.textContent = 'Слушать';
 
-        button.onclick = function() {
-          alert('Здесь будет ссылка на аудио');
-        };
+          button.onclick = function() {
+            tg.openLink(track.file);
+          };
 
-        card.appendChild(cover);
-        card.appendChild(title);
-        card.appendChild(button);
+          card.appendChild(cover);
+          card.appendChild(title);
+          card.appendChild(button);
 
-        container.appendChild(card);
+          container.appendChild(card);
+        });
+      })
+
+      .catch(function(error) {
+        console.error(error);
+
+        container.textContent = 'Ошибка загрузки списка треков';
       });
-    </script>
-  </body>
+  </script>
+
+</body>
 </html>
