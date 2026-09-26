@@ -7,7 +7,7 @@ const tracks = [
     title: 'Трек 1',
     artist: 'Исполнитель 1',
     cover: '🎵',
-    audioUrl: '/audio/track1.mp3'
+    audioUrl: 'audio/track1.mp3'
   },
   {
     id: 2,
