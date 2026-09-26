@@ -1,1 +1,17 @@
-
+[
+  {
+    "title": "Трек 1",
+    "cover": "🎵",
+    "file": "audio/track1.mp3"
+  },
+  {
+    "title": "Newstar",
+    "cover": "⭐",
+    "file": "audio/newstar.mp3"
+  },
+  {
+    "title": "Slikk",
+    "cover": "🔥",
+    "file": "audio/slikk.mp3"
+  }
+]
