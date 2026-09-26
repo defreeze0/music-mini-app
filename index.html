@@ -70,16 +70,14 @@
       align-items: center;
       justify-content: center;
 
-      border-radius: 12px;
-
       background: #242424;
+      border-radius: 12px;
 
       font-size: 28px;
     }
 
     .title {
       flex: 1;
-
       min-width: 0;
 
       font-size: 16px;
@@ -103,8 +101,6 @@
       font-weight: 600;
 
       cursor: pointer;
-
-      transition: opacity 0.2s ease;
     }
 
     .card button:active {
@@ -155,19 +151,28 @@
     </div>
 
     <div id="app" class="cards-container">
+
       <div class="status">
         <div class="spinner"></div>
         Загрузка...
       </div>
+
     </div>
 
   </div>
 
   <script>
+
+    /*
+     * Telegram Web App
+     */
     const tg = window.Telegram.WebApp;
 
     tg.ready();
 
+    /*
+     * Элементы страницы
+     */
     const greetingEl = document.getElementById('greeting');
     const container = document.getElementById('app');
 
@@ -183,160 +188,107 @@
     }
 
     /*
-     * Загрузка списка треков
+     * Загрузка data.json
      */
-    fetch('./data.json')
+    fetch('data.json')
+
       .then(function(response) {
 
+        /*
+         * Проверяем HTTP-ошибку.
+         *
+         * Например:
+         * 404 — файла нет
+         * 500 — ошибка сервера
+         */
         if (!response.ok) {
-          throw new Error(
-            'Не удалось загрузить data.json. HTTP статус: ' + response.status
+
+          console.error(
+            'NETWORK ERROR: Не удалось найти файл data.json. Проверьте имя файла и его расположение в репозитории.'
           );
-        }
 
-        return response.json();
-      })
-
-      .then(function(tracks) {
-
-        /*
-         * Проверяем, что JSON действительно содержит массив
-         */
-        if (!Array.isArray(tracks) || tracks.length === 0) {
-          throw new Error('Файл data.json пустой или имеет неправильный формат');
+          /*
+           * Передаём специальную ошибку дальше,
+           * чтобы не пытаться парсить ответ.
+           */
+          throw new Error('NETWORK_ERROR');
         }
 
         /*
-         * Очищаем "Загрузка..."
-         */
-        container.innerHTML = '';
+         * Если файл найден — пытаемся прочитать JSON.
+         *
+         * Именно здесь возникнет SyntaxError,
+         *
+
+
+atus error';
+
+          errorMessage.textContent =
+            'Ошибка загрузки списка треков. Проверьте файл data.json';
+
+          container.appendChild(errorMessage);
+
+          return;
+        }
 
         /*
-         * Создаём карточки
+         * Ошибка структуры JSON
          */
-        tracks.forEach(function(track) {
+        if (error.message === 'INVALID_JSON_STRUCTURE') {
 
-          const card =
+          container.innerHTML = '';
 
+          const errorMessage = document.createElement('div');
 
-nt.createElement('div');
-          card.className = 'card';
+          errorMessage.className = 'status error';
 
-          /*
-           * Обложка
-           */
-          const cover = document.createElement('div');
-          cover.className = 'cover-placeholder';
-          cover.textContent = track.cover || '🎵';
+          errorMessage.textContent =
+            'Ошибка загрузки списка треков. Проверьте файл data.json';
 
-          /*
-           * Название
-           */
-          const title = document.createElement('div');
-          title.className = 'title';
-          title.textContent = track.title || 'Без названия';
+          container.appendChild(errorMessage);
 
-          /*
-           * Кнопка
-           */
-          const button = document.createElement('button');
-          button.textContent = 'Слушать';
-
-          /*
-           * Обработка нажатия
-           */
-          button.onclick = function() {
-
-            /*
-             * Проверяем путь
-             */
-            if (
-              !track.file_path ||
-              typeof track.file_path !== 'string' ||
-              track.file_path.trim() === ''
-            ) {
-              alert('Ошибка: путь к файлу не указан');
-              return;
-            }
-
-            /*
-             * Убираем случайные пробелы
-             */
-            const filePath = track.file_path.trim();
-
-            /*
-             * Проверяем, что путь похож на путь к аудиофайлу
-             */
-            if (
-              !filePath.startsWith('audio/') ||
-              !filePath.toLowerCase().endsWith('.mp3')
-            ) {
-              console.error(
-                'Некорректный путь к аудиофайлу:',
-                filePath
-              );
-
-              alert('Ошибка: путь к файлу не указан');
-              return;
-            }
-
-            /*
-             * Превращаем относительный путь
-             *
-             * audio/track1.mp3
-             *
-             * в полный URL, например:
-             *
-             * https://defreeze0.github.io/music-mini-app/audio/track1.mp3
-             *
-             * Это особенно удобно для проверки GitHub Pages.
-             */
-            const fullUrl = new URL(
-              filePath,
-              document.baseURI
-            ).href;
-
-            /*
-             * Главная проверка для отладки.
-             *
-             * Открой консоль браузера и посмотри,
-             * какой именно URL здесь выводится.
-             */
-            console.log(
-              'Открываем аудиофайл:',
-              fullUrl
-            );
-
-            /*
-             * Открываем ссылку через Telegram WebApp
-             */
-            tg.openLink(fullUrl);
-          };
-
-          /*
-           * Собираем карточку
-           */
-          card.appendChild(cover);
-          card.appendChild(title);
-          card.appendChild(button);
-
-          container.appendChild(card);
-        });
-      })
-
-      .catch(function(error) {
+          return;
+        }
 
         /*
-         * Выводим настоящую ошибку в консоль
+         * Ошибка именно JSON.parse()
+         *
+         * response.json() выбрасывает SyntaxError,
+         * если содержимое data.json не является валидным JSON.
+         */
+        if (error instanceof SyntaxError) {
+
+          console.error(
+            'JSON PARSING ERROR: В файле data.json есть синтаксическая ошибка (лишние запятые, кавычки и т.д.).'
+          );
+
+          console.error(
+            'Подробности ошибки:',
+            error
+          );
+
+          container.innerHTML = '';
+
+          const errorMessage = document.createElement('div');
+
+          errorMessage.className = 'status error';
+
+          errorMessage.textContent =
+            'Ошибка загрузки списка треков. Проверьте файл data.json';
+
+          container.appendChild(errorMessage);
+
+          return;
+        }
+
+        /*
+         * Любая другая неизвестная ошибка
          */
         console.error(
-          'Ошибка загрузки списка треков:',
+          'UNKNOWN ERROR: Неизвестная ошибка при загрузке треков.',
           error
         );
 
-        /*
-         * Показываем пользователю понятное сообщение
-         */
         container.innerHTML = '';
 
         const errorMessage = document.createElement('div');
@@ -347,8 +299,190 @@ nt.createElement('div');
           'Ошибка загрузки списка треков. Проверьте файл data.json';
 
         container.appendChild(errorMessage);
+
       });
+
   </script>
 
 </body>
-</html> docume
+</html> е
+
+
+сли JSON повреждён.
+         */
+        return response.json();
+
+      })
+
+      .then(function(tracks) {
+
+        /*
+         * Проверяем, что JSON содержит массив.
+         */
+        if (!Array.isArray(tracks)) {
+
+          console.error(
+            'JSON PARSING ERROR: В файле data.json есть синтаксическая ошибка (лишние запятые, кавычки и т.д.).'
+          );
+
+          throw new Error('INVALID_JSON_STRUCTURE');
+        }
+
+        /*
+         * Проверяем пустой массив.
+         */
+        if (tracks.length === 0) {
+
+          console.error(
+            'DATA EMPTY: Файл data.json найден, но список треков пуст.'
+          );
+
+          container.innerHTML = '';
+
+          const emptyMessage = document.createElement('div');
+
+          emptyMessage.className = 'status';
+
+          emptyMessage.textContent =
+            'Файл data.json найден, но список треков пуст.';
+
+          container.appendChild(emptyMessage);
+
+          return;
+        }
+
+        /*
+         * Очищаем "Загрузка..."
+         */
+        container.innerHTML = '';
+
+        /*
+         * Создаём карточки треков
+         */
+        tracks.forEach(function(track) {
+
+          const card = document.createElement('div');
+
+          card.className = 'card';
+
+          /*
+           * Обложка
+           */
+          const cover = document.createElement('div');
+
+          cover.className = 'cover-placeholder';
+
+          cover.textContent = track.cover || '🎵';
+
+          /*
+           * Название
+           */
+          const title = document.createElement('div');
+
+          title.className = 'title';
+
+          title.textContent = track.title || 'Без названия';
+
+          /*
+           * Кнопка
+           */
+          const button = document.createElement('button');
+
+          button.textContent = 'Слушать';
+
+          /*
+           * Нажатие на кнопку
+           */
+          button.addEventListener('click', function() {
+
+            /*
+             * Проверяем наличие пути
+             */
+            if (
+              !track.file_path ||
+              typeof track.file_path !== 'string' ||
+              track.file_path.trim() === ''
+            ) {
+
+              alert('Ошибка: путь к файлу не указан');
+
+              console.error(
+                'PLAY ERROR: У трека отсутствует file_path.',
+                track
+              );
+
+              return;
+            }
+
+            /*
+             * Получаем путь из JSON
+             */
+            const filePath = track.file_path.trim();
+
+            /*
+             * Проверяем, что путь ведёт
+             * в папку audio и заканчивается на .mp3
+             */
+            if (
+              !filePath.startsWith('audio/') ||
+              !filePath.toLowerCase().endsWith('.mp3')
+            ) {
+
+              alert('Ошибка: путь к файлу не указан');
+
+              console.error(
+                'PLAY ERROR: Некорректный путь к аудиофайлу ->',
+                filePath
+              );
+
+              return;
+            }
+
+            /*
+             * Для консоли показываем именно путь,
+             * который указан в JSON.
+             *
+             * Например:
+             *
+             * PLAYING: Открываем файл -> audio/track1.mp3
+             */
+            console.log(
+              'PLAYING: Открываем файл -> ' + filePath
+            );
+
+            /*
+             * Открываем через Telegram WebApp
+             */
+            tg.openLink(filePath);
+
+          });
+
+          /*
+           * Собираем карточку
+           */
+          card.appendChild(cover);
+          card.appendChild(title);
+          card.appendChild(button);
+
+          /*
+           * Добавляем карточку на страницу
+           */
+          container.appendChild(card);
+
+        });
+
+      })
+
+      .catch(function(error) {
+
+        /*
+         * Ошибка сети уже была выведена выше,
+         * поэтому здесь ничего дополнительно не выводим.
+         */
+        if (error.message === 'NETWORK_ERROR') {
+
+          container.innerHTML = '';
+
+          const errorMessage = document.createElement('div');
+
+          errorMessage.className = 'st
