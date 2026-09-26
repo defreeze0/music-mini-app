@@ -1,79 +1,154 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Музыка в Telegram</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        margin: 0;
-        padding: 20px;
-        background-color: #f0f2f5;
-        color: #333;
-      }
-      .container {
-        max-width: 600px;
-        margin: 0 auto;
-      }
-      h1 { text-align: center; color: #2481cc; }
-      p { text-align: center; color: #666; }
-      
-      .tracks-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 20px;
-        margin-top: 30px;
-      }
-      
-      .track-card {
-        background: white;
-        padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-      }
-      
-      .track-cover {
-        width: 100%;
-        height: 150px;
-        background-color: #ddd;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #888;
-        margin-bottom: 10px;
-        border-radius: 8px;
-        font-size: 40px;
-      }
-      
-      .track-title { font-weight: bold; margin-bottom: 4px; }
-      .track-artist { color: #888; font-size: 0.9em; }
-      
-      .play-btn {
-        margin-top: 15px;
-        padding: 10px 20px;
-        background-color: #2481cc;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        width: 100%;
-      }
-      .play-btn:hover { background-color: #1b6aa3; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1 id="greeting">Привет!</h1>
-      <p>Выбери трек:</p>
-      <div id="tracks-list" class="tracks-grid"></div>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Mini App</title>
+  <!-- Подключаем скрипт Telegram -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    h1 { text-align: center; color: #2481cc; }
+    p { text-align: center; color: #666; }
+    
+    .tracks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .track-card {
+      background: white;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    
+    .track-cover {
+      width: 100%;
+      height: 140px;
+      background-color: #eef2f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      font-size: 40px;
+      border: 2px dashed #ccc;
+    }
+    
+    .track-title { font-weight: bold; margin-bottom: 4px; }
+    .track-artist { color: #888; font-size: 0.9em; }
+    
+    .play-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background-color: #2481cc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+    }
+    .play-btn:hover { background-color: #1b6aa3; }
+    .play-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="greeting">Привет!</h1>
+    <p>Выбери трек:</p>
+    <div id="tracks-list" class="tracks-grid"></div>
+    <div id="error-msg" style="display:none; color:red; text-align:center; margin-top:20px;"></div>
+  </div>
 
-    <script>
-      const tg = window.Telegram.WebApp;
-      tg.ready();
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const tracks = [
+      {
+        id: 1,
+        title: 'Трек 1',
+        artist: 'Исполнитель 1',
+        cover: '🎵',
+        audioUrl: '/audio/track1.mp3'
+      },
+      {
+        id: 2,
+        title: 'Newstar',
+        artist: 'Unknown',
+        cover: '⭐',
+        audioUrl: '/audio/newstar.mp3'
+      },
+      {
+        id: 3,
+        title: 'Slikk',
+        artist: 'Unknown',
+        cover: '🔥',
+        audioUrl: '/audio/slikk.mp3'
+      }
+    ];
+
+    // 1. Приветствие
+    const user = tg.initDataUnsafe?.user;
+    const greetingEl = document.getElementById('greeting');
+    if (user && greetingEl) {
+      greetingEl.textContent = `Привет, \${user.first_name}!`;
+    }
+
+    // 2. Отрисовка карточек (ГЛАВНОЕ: это работает даже без файлов!)
+    const tracksList = document.getElementById('tracks-list');
+    const errorMsg = document.getElementById('error-msg');
+
+    if (tracksList) {
+      tracks.forEach(track => {
+        const card = document.createElement('div');
+        card.className = 'track-card';
+
+        // Кнопка изначально активная. Если файл не найдется, мы просто покажем предупреждение, но не сломаем верстку.
+        card.innerHTML = `
+          <div class="track-cover">\${track.cover}</div>
+          <div class="track-info">
+            <div class="track-title">\${track.title}</div>
+            <div class="track-artist">\${track.artist}</div>
+          </div>
+          <button class="play-btn" onclick="playTrack('\${track.audioUrl}', this)">Слушать</button>
+        `;
+
+        tracksList.appendChild(card);
+      });
+    }
+
+    // 3. Логика воспроизведения
+    function playTrack(url, btnElement) {
+      // Простая проверка: если файл не существует (можно проверить через fetch, но для мини-приложения проще открыть ссылку)
+      console.log('Попытка открыть:', url);
+      
+      // В Telegram Mini Apps tg.openLink открывает ссылку во встроенном браузере
+      tg.openLink(url);
+      
+      // Если хочешь, чтобы кнопка становилась серой после нажатия:
+      // btnElement.disabled = true;
+      // btnElement.textContent = "Открывается...";
+    }
+  </script>
+</body>
+</html>
