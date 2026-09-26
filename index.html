@@ -76,17 +76,21 @@
     const tg = window.Telegram.WebApp;
     tg.ready();
 
+    // ИСПРАВЛЕНО: Пути без слэша в начале!
     const tracks = [
-      { id: 1, title: 'Трек 1', artist: 'Исполнитель 1', cover: '🎵', url: '/audio/track1.mp3' },
-      { id: 2, title: 'Newstar', artist: 'Unknown', cover: '⭐', url: '/audio/newstar.mp3' },
-      { id: 3, title: 'Slikk', artist: 'Unknown', cover: '🔥', url: '/audio/slikk.mp3' }
+      { id: 1, title: 'Трек 1', artist: 'Исполнитель 1', cover: '🎵', url: 'audio/track1.mp3' },
+      { id: 2, title: 'Newstar', artist: 'Unknown', cover: '⭐', url: 'audio/newstar.mp3' },
+      { id: 3, title: 'Slikk', artist: 'Unknown', cover: '🔥', url: 'audio/slikk.mp3' }
     ];
 
+    // Приветствие
+    const user = tg.initDataUnsafe?.user;
     const greetingEl = document.getElementById('greeting');
-    if (tg.initDataUnsafe?.user?.first_name && greetingEl) {
-      greetingEl.textContent = `Привет, \${tg.initDataUnsafe.user.first_name}!`;
+    if (user && greetingEl) {
+      greetingEl.textContent = `Привет, \${user.first_name}!`;
     }
 
+    // Отрисовка карточек
     const container = document.getElementById('tracks-list');
     
     if (container) {
