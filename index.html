@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Music Mini App</title>
-  <!-- Подключаем скрипт Telegram -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body {
@@ -14,10 +13,7 @@
       background-color: #f0f2f5;
       color: #333;
     }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+    .container { max-width: 600px; margin: 0 auto; }
     h1 { text-align: center; color: #2481cc; }
     p { text-align: center; color: #666; }
     
@@ -65,10 +61,8 @@
       border-radius: 8px;
       cursor: pointer;
       width: 100%;
-      font-size: 14px;
     }
     .play-btn:hover { background-color: #1b6aa3; }
-    .play-btn:disabled { background-color: #ccc; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -76,7 +70,6 @@
     <h1 id="greeting">Привет!</h1>
     <p>Выбери трек:</p>
     <div id="tracks-list" class="tracks-grid"></div>
-    <div id="error-msg" style="display:none; color:red; text-align:center; margin-top:20px;"></div>
   </div>
 
   <script>
@@ -84,70 +77,32 @@
     tg.ready();
 
     const tracks = [
-      {
-        id: 1,
-        title: 'Трек 1',
-        artist: 'Исполнитель 1',
-        cover: '🎵',
-        audioUrl: '/audio/track1.mp3'
-      },
-      {
-        id: 2,
-        title: 'Newstar',
-        artist: 'Unknown',
-        cover: '⭐',
-        audioUrl: '/audio/newstar.mp3'
-      },
-      {
-        id: 3,
-        title: 'Slikk',
-        artist: 'Unknown',
-        cover: '🔥',
-        audioUrl: '/audio/slikk.mp3'
-      }
+      { id: 1, title: 'Трек 1', artist: 'Исполнитель 1', cover: '🎵', url: '/audio/track1.mp3' },
+      { id: 2, title: 'Newstar', artist: 'Unknown', cover: '⭐', url: '/audio/newstar.mp3' },
+      { id: 3, title: 'Slikk', artist: 'Unknown', cover: '🔥', url: '/audio/slikk.mp3' }
     ];
 
-    // 1. Приветствие
-    const user = tg.initDataUnsafe?.user;
     const greetingEl = document.getElementById('greeting');
-    if (user && greetingEl) {
-      greetingEl.textContent = `Привет, \${user.first_name}!`;
+    if (tg.initDataUnsafe?.user?.first_name && greetingEl) {
+      greetingEl.textContent = `Привет, \${tg.initDataUnsafe.user.first_name}!`;
     }
 
-    // 2. Отрисовка карточек (ГЛАВНОЕ: это работает даже без файлов!)
-    const tracksList = document.getElementById('tracks-list');
-    const errorMsg = document.getElementById('error-msg');
-
-    if (tracksList) {
-      tracks.forEach(track => {
-        const card = document.createElement('div');
-        card.className = 'track-card';
-
-        // Кнопка изначально активная. Если файл не найдется, мы просто покажем предупреждение, но не сломаем верстку.
-        card.innerHTML = `
-          <div class="track-cover">\${track.cover}</div>
+    const container = document.getElementById('tracks-list');
+    
+    if (container) {
+      tracks.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'track-card';
+        el.innerHTML = `
+          <div class="track-cover">\${t.cover}</div>
           <div class="track-info">
-            <div class="track-title">\${track.title}</div>
-            <div class="track-artist">\${track.artist}</div>
+            <div class="track-title">\${t.title}</div>
+            <div class="track-artist">\${t.artist}</div>
           </div>
-          <button class="play-btn" onclick="playTrack('\${track.audioUrl}', this)">Слушать</button>
+          <button class="play-btn" onclick="tg.openLink('\${t.url}')">Слушать</button>
         `;
-
-        tracksList.appendChild(card);
+        container.appendChild(el);
       });
-    }
-
-    // 3. Логика воспроизведения
-    function playTrack(url, btnElement) {
-      // Простая проверка: если файл не существует (можно проверить через fetch, но для мини-приложения проще открыть ссылку)
-      console.log('Попытка открыть:', url);
-      
-      // В Telegram Mini Apps tg.openLink открывает ссылку во встроенном браузере
-      tg.openLink(url);
-      
-      // Если хочешь, чтобы кнопка становилась серой после нажатия:
-      // btnElement.disabled = true;
-      // btnElement.textContent = "Открывается...";
     }
   </script>
 </body>
