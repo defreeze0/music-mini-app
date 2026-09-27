@@ -4,15 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Music Mini App</title>
+    <!-- Подключаем SDK Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
       :root {
-        --bg-color: #1c1c1e;
-        --card-bg: #2c2c30;
-        --text-color: #ffffff;
-        --accent-color: #2481cc;
-        --accent-text: #ffffff;
+        /* Используем переменные темы Telegram для идеальной адаптации */
+        --bg-color: var(--tg-theme-bg-color, #1c1c1e);
+        --card-bg: var(--tg-theme-secondary-bg-color, #2c2c30);
+        --text-color: var(--tg-theme-text-color, #ffffff);
+        --hint-color: var(--tg-theme-hint-color, #aaaaaa);
+        --button-color: var(--tg-theme-button-color, #2481cc);
+        --button-text: var(--tg-theme-button-text-color, #ffffff);
       }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         background-color: var(--bg-color);
@@ -22,70 +26,79 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+        min-height: 100vh;
       }
+
       h1 {
-        color: var(--accent-color);
+        color: var(--button-color);
         margin-top: 0;
         text-align: center;
         font-size: 24px;
-        margin-bottom: 10px;
+        margin-bottom: 5px;
+        font-weight: 600;
       }
+
       .subtitle {
-        color: #aaaaaa;
+        color: var(--hint-color);
         text-align: center;
         margin-bottom: 30px;
         font-size: 14px;
+        line-height: 1.4;
       }
-      .loader-box {
-        background-color: #3a3a3e;
-        color: #aaaaaa;
-        padding: 15px 25px;
-        border-radius: 12px;
-        font-weight: 600;
-        border: 1px solid #444;
-        min-width: 200px;
-        text-align: center;
-      }
+
+      /* Контейнер для карточек */
       .cards-container {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
         gap: 20px;
         width: 100%;
         max-width: 600px;
+        margin-bottom: 40px;
       }
+
       .card {
         background: var(--card-bg);
         border-radius: 12px;
         padding: 15px;
         text-align: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         display: flex;
         flex-direction: column;
         align-items: center;
-        transition: transform 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
       }
-      .card:active { transform: scale(0.98); }
+
+      .card:active {
+        transform: scale(0.96);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
+
       .cover-placeholder {
         width: 80px;
         height: 80px;
-        background-color: #3a3a3e;
+        background-color: rgba(255, 255, 255, 0.05);
         border-radius: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 32px;
+        user-select: none;
       }
+
       .title {
         font-weight: 600;
         margin-bottom: 15px;
         font-size: 14px;
         color: var(--text-color);
         word-break: break-word;
+        text-align: center;
+        min-height: 36px; /* Чтобы кнопки были на одном уровне */
       }
+
       button {
-        background-color: var(--accent-color);
-        color: var(--accent-text);
+        background-color: var(--button-color);
+        color: var(--button-text);
         border: none;
         padding: 10px 20px;
         border-radius: 8px;
@@ -93,36 +106,137 @@
         font-size: 14px;
         width: 100%;
         transition: opacity 0.2s;
+        font-weight: 500;
       }
-      button:active { opacity: 0.8; }
+
+      button:active {
+        opacity: 0.8;
+      }
+
+      /* Лоадер и ошибки */
+      .loader-box {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: var(--hint-color);
+        padding: 15px 25px;
+        border-radius: 12px;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        min-width: 200px;
+        text-align: center;
+        margin-top: 40px;
+      }
+
       .error-msg {
         color: #ff5252;
         text-align: center;
         margin-top: 20px;
         font-size: 14px;
         line-height: 1.4;
+        padding: 10px;
+        background: rgba(255, 82, 82, 0.1);
+        border-radius: 8px;
+      }
+
+      /* --- СКРЫТЫЙ ПЛЕЕР (Заготовка на будущее) --- */
+      .player-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 80px;
+        background: var(--card-bg);
+        border-top: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 20px;
+        box-sizing: border-box;
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(100%);
+        transition: all 0.3s ease;
+      }
+
+      .player-container.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .player-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+        max-width: 600px;
+      }
+
+      .cover-small {
+        width: 50px;
+        height: 50px;
+        background: #333;
+        border-radius: 8px;
+        flex-shrink: 0;
+      }
+
+      .progress-bar {
+        flex-grow: 1;
+        height: 4px;
+        background: #555;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+
+      .play-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: var(--button-color);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+      }
+      
+      #mainAudio {
+        display: none; /* Скрываем нативный элемент */
       }
     </style>
   </head>
   <body>
+    <!-- Заголовок с именем -->
     <h1 id="greeting">Загрузка...</h1>
     <p class="subtitle">Выбирай треки и слушай музыку</p>
-    
+
+    <!-- Область для карточек -->
     <div id="app">
       <div class="loader-box">Загрузка треков...</div>
+    </div>
+
+    <!-- Заготовка плеера (пока скрыта) -->
+    <div class="player-container" id="player">
+      <div class="cover-small" id="player-cover"></div>
+      <div class="progress-bar" id="progress"></div>
+      <button class="play-btn" id="play-pause-btn">▶</button>
+      <audio id="mainAudio"></audio>
     </div>
 
     <script>
       const tg = window.Telegram.WebApp;
       tg.ready();
 
-      // 1. Приветствие (Защита от undefined)
+      // 1. Логика приветствия
       const user = tg.initDataUnsafe?.user;
-      const greetingEl = document.getElementById('greeting');
       const displayName = user && user.first_name ? user.first_name : 'друг';
-      if (greetingEl) greetingEl.textContent = `Привет, \${displayName}! 👋`;
+      const greetingEl = document.getElementById('greeting');
+      if (greetingEl) {
+        greetingEl.textContent = `Привет, \${displayName}! 👋`;
+      }
 
-      // 2. Загрузка и обработка JSON
+      // 2. Загрузка треков
       const container = document.getElementById('app');
       
       fetch('data.json')
@@ -138,8 +252,7 @@
             return;
           }
 
-          // Очищаем контейнер и рисуем карточки
-          container.innerHTML = '';
+          container.innerHTML = ''; // Очищаем лоадер
           
           tracks.forEach(track => {
             const card = document.createElement('div');
@@ -147,7 +260,6 @@
 
             const cover = document.createElement('div');
             cover.className = 'cover-placeholder';
-            // Защита: если cover пустой, ставим заглушку
             cover.textContent = track.cover || '🎵';
 
             const title = document.createElement('div');
@@ -159,11 +271,12 @@
             
             btn.onclick = () => {
               const url = track.file_path;
-              console.log('▶️ PLAYING:', url);
+              console.log('▶️ Запуск трека:', url);
               if (!url) {
                 alert('Ошибка: путь к файлу не указан в JSON');
                 return;
               }
+              // Сейчас открываем в новой вкладке. Позже заменим на audio.play()
               tg.openLink(url);
             };
 
@@ -179,9 +292,9 @@
             <div class="error-msg">
               <b>Не удалось загрузить треки!</b><br>
               Проверь консоль (F12) и убедись, что:<br>
-              1. Файл <code>data.json</code> лежит в корне (рядом с index.html).<br>
-              2. В JSON нет синтаксических ошибок (лишние запятые, кавычки).<br>
-              3. Имена файлов в JSON совпадают с файлами в папке audio (регистр важен!).
+              1. Файл <code>data.json</code> лежит в корне.<br>
+              2. В JSON нет синтаксических ошибок.<br>
+              3. Имена файлов в JSON совпадают с файлами в папке audio.
             </div>
           `;
         });
