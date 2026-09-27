@@ -1,488 +1,167 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>Music App</title>
-
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-  <style>
-    :root {
-      --tg-theme-bg-color: #0e0e0e;
-      --tg-theme-text-color: #ffffff;
-      --tg-theme-hint-color: #8e8e93;
-      --tg-theme-button-color: #2ea6ff;
-      --tg-theme-button-text-color: #ffffff;
-      --tg-theme-secondary-bg-color: #181818;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      padding: 20px;
-      background: var(--tg-theme-bg-color);
-      color: var(--tg-theme-text-color);
-      font-family: Arial, sans-serif;
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    .greeting {
-      margin-bottom: 20px;
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .cards-container {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-
-      padding: 14px;
-
-      background: var(--tg-theme-secondary-bg-color);
-      border-radius: 16px;
-
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    }
-
-    .cover-placeholder {
-      width: 58px;
-      height: 58px;
-
-      flex-shrink: 0;
-
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      background: #242424;
-      border-radius: 12px;
-
-      font-size: 28px;
-    }
-
-    .title {
-      flex: 1;
-      min-width: 0;
-
-      font-size: 16px;
-      font-weight: 600;
-
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .card button {
-      border: none;
-      border-radius: 10px;
-
-      padding: 10px 15px;
-
-      background: var(--tg-theme-button-color);
-      color: var(--tg-theme-button-text-color);
-
-      font-size: 14px;
-      font-weight: 600;
-
-      cursor: pointer;
-    }
-
-    .card button:active {
-      opacity: 0.7;
-    }
-
-    .status {
-      padding: 20px 10px;
-
-      color: var(--tg-theme-hint-color);
-
-      text-align: center;
-      font-size: 15px;
-    }
-
-    .error {
-      color: #ff6b6b;
-    }
-
-    .spinner {
-      width: 24px;
-      height: 24px;
-
-      margin: 0 auto 10px;
-
-      border: 3px solid rgba(255, 255, 255, 0.15);
-      border-top-color: var(--tg-theme-button-color);
-
-      border-radius: 50%;
-
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Music Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--tg-theme-bg-color, #1c1c1e);
+        color: var(--tg-theme-text-color, #ffffff);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
-    }
-  </style>
-</head>
-
-<body>
-
-  <div class="container">
-
-    <div id="greeting" class="greeting">
-      Привет, друг!
+      h1 {
+        color: var(--tg-theme-button-color, #2481cc);
+        margin-top: 0;
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 30px;
+      }
+      .error-msg {
+        color: #ff5252;
+        text-align: center;
+        margin-top: 20px;
+        font-size: 16px;
+        line-height: 1.4;
+      }
+      .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 20px;
+        width: 100%;
+        max-width: 600px;
+      }
+      .card {
+        background: var(--tg-theme-secondary-bg-color, #2c2c30);
+        border-radius: 12px;
+        padding: 15px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s;
+      }
+      .card:active { transform: scale(0.98); }
+      .cover-placeholder {
+        width: 80px;
+        height: 80px;
+        background-color: var(--tg-theme-hint-color, #3a3a3e);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+      }
+      .title {
+        font-weight: 600;
+        margin-bottom: 15px;
+        font-size: 14px;
+        color: var(--tg-theme-text-color, #fff);
+        word-break: break-word;
+      }
+      button {
+        background-color: var(--tg-theme-button-color, #2481cc);
+        color: var(--tg-theme-button-text-color, #ffffff);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        width: 100%;
+        transition: opacity 0.2s;
+      }
+      button:active { opacity: 0.8; }
+      .loader {
+        font-size: 18px;
+        color: var(--tg-theme-hint-color, #aaa);
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="greeting">Загрузка...</h1>
+    <div class="cards-container" id="app">
+      <p class="loader">Загрузка треков...</p>
     </div>
 
-    <div id="app" class="cards-container">
+    <script>
+      const tg = window.Telegram.WebApp;
+      tg.ready();
 
-      <div class="status">
-        <div class="spinner"></div>
-        Загрузка...
-      </div>
+      // Приветствие
+      const user = tg.initDataUnsafe?.user;
+      const greetingEl = document.getElementById('greeting');
+      if (user && greetingEl) {
+        greetingEl.textContent = `Привет, \${user.first_name}!`;
+      } else if (greetingEl) {
+        greetingEl.textContent = 'Привет, друг!';
+      }
 
-    </div>
-
-  </div>
-
-  <script>
-
-    /*
-     * Telegram Web App
-     */
-    const tg = window.Telegram.WebApp;
-
-    tg.ready();
-
-    /*
-     * Элементы страницы
-     */
-    const greetingEl = document.getElementById('greeting');
-    const container = document.getElementById('app');
-
-    /*
-     * Приветствие пользователя Telegram
-     */
-    const user = tg.initDataUnsafe?.user;
-
-    if (user && user.first_name) {
-      greetingEl.textContent = 'Привет, ' + user.first_name + '!';
-    } else {
-      greetingEl.textContent = 'Привет, друг!';
-    }
-
-    /*
-     * Загрузка data.json
-     */
-    fetch('data.json')
-
-      .then(function(response) {
-
-        /*
-         * Проверяем HTTP-ошибку.
-         *
-         * Например:
-         * 404 — файла нет
-         * 500 — ошибка сервера
-         */
-        if (!response.ok) {
-
-          console.error(
-            'NETWORK ERROR: Не удалось найти файл data.json. Проверьте имя файла и его расположение в репозитории.'
-          );
-
-          /*
-           * Передаём специальную ошибку дальше,
-           * чтобы не пытаться парсить ответ.
-           */
-          throw new Error('NETWORK_ERROR');
-        }
-
-        /*
-         * Если файл найден — пытаемся прочитать JSON.
-         *
-         * Именно здесь возникнет SyntaxError,
-         *
-
-
-atus error';
-
-          errorMessage.textContent =
-            'Ошибка загрузки списка треков. Проверьте файл data.json';
-
-          container.appendChild(errorMessage);
-
-          return;
-        }
-
-        /*
-         * Ошибка структуры JSON
-         */
-        if (error.message === 'INVALID_JSON_STRUCTURE') {
-
+      // Загрузка данных
+      const container = document.getElementById('app');
+      
+      fetch('data.json')
+        .then(response => {
+          if (!response.ok) throw new Error('Network Error: ' + response.status);
+          return response.json();
+        })
+        .then(tracks => {
+          console.log('✅ Успешно загружено треков:', tracks.length);
           container.innerHTML = '';
 
-          const errorMessage = document.createElement('div');
+          if (!tracks || tracks.length === 0) {
+            container.innerHTML = '<p class="error-msg">Список треков пуст.</p>';
+            return;
+          }
 
-          errorMessage.className = 'status error';
+          tracks.forEach(t => {
+            const card = document.createElement('div');
+            card.className = 'card';
 
-          errorMessage.textContent =
-            'Ошибка загрузки списка треков. Проверьте файл data.json';
+            const cover = document.createElement('div');
+            cover.className = 'cover-placeholder';
+            cover.textContent = t.cover;
 
-          container.appendChild(errorMessage);
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = t.title;
 
-          return;
-        }
+            const btn = document.createElement('button');
+            btn.textContent = 'Слушать';
+            
+            btn.onclick = () => {
+              const url = t.file_path;
+              console.log('▶️ PLAYING:', url);
+              if (!url) {
+                alert('Ошибка: путь к файлу не указан');
+                return;
+              }
+              tg.openLink(url);
+            };
 
-        /*
-         * Ошибка именно JSON.parse()
-         *
-         * response.json() выбрасывает SyntaxError,
-         * если содержимое data.json не является валидным JSON.
-         */
-        if (error instanceof SyntaxError) {
-
-          console.error(
-            'JSON PARSING ERROR: В файле data.json есть синтаксическая ошибка (лишние запятые, кавычки и т.д.).'
-          );
-
-          console.error(
-            'Подробности ошибки:',
-            error
-          );
-
-          container.innerHTML = '';
-
-          const errorMessage = document.createElement('div');
-
-          errorMessage.className = 'status error';
-
-          errorMessage.textContent =
-            'Ошибка загрузки списка треков. Проверьте файл data.json';
-
-          container.appendChild(errorMessage);
-
-          return;
-        }
-
-        /*
-         * Любая другая неизвестная ошибка
-         */
-        console.error(
-          'UNKNOWN ERROR: Неизвестная ошибка при загрузке треков.',
-          error
-        );
-
-        container.innerHTML = '';
-
-        const errorMessage = document.createElement('div');
-
-        errorMessage.className = 'status error';
-
-        errorMessage.textContent =
-          'Ошибка загрузки списка треков. Проверьте файл data.json';
-
-        container.appendChild(errorMessage);
-
-      });
-
-  </script>
-
-</body>
-</html> е
-
-
-сли JSON повреждён.
-         */
-        return response.json();
-
-      })
-
-      .then(function(tracks) {
-
-        /*
-         * Проверяем, что JSON содержит массив.
-         */
-        if (!Array.isArray(tracks)) {
-
-          console.error(
-            'JSON PARSING ERROR: В файле data.json есть синтаксическая ошибка (лишние запятые, кавычки и т.д.).'
-          );
-
-          throw new Error('INVALID_JSON_STRUCTURE');
-        }
-
-        /*
-         * Проверяем пустой массив.
-         */
-        if (tracks.length === 0) {
-
-          console.error(
-            'DATA EMPTY: Файл data.json найден, но список треков пуст.'
-          );
-
-          container.innerHTML = '';
-
-          const emptyMessage = document.createElement('div');
-
-          emptyMessage.className = 'status';
-
-          emptyMessage.textContent =
-            'Файл data.json найден, но список треков пуст.';
-
-          container.appendChild(emptyMessage);
-
-          return;
-        }
-
-        /*
-         * Очищаем "Загрузка..."
-         */
-        container.innerHTML = '';
-
-        /*
-         * Создаём карточки треков
-         */
-        tracks.forEach(function(track) {
-
-          const card = document.createElement('div');
-
-          card.className = 'card';
-
-          /*
-           * Обложка
-           */
-          const cover = document.createElement('div');
-
-          cover.className = 'cover-placeholder';
-
-          cover.textContent = track.cover || '🎵';
-
-          /*
-           * Название
-           */
-          const title = document.createElement('div');
-
-          title.className = 'title';
-
-          title.textContent = track.title || 'Без названия';
-
-          /*
-           * Кнопка
-           */
-          const button = document.createElement('button');
-
-          button.textContent = 'Слушать';
-
-          /*
-           * Нажатие на кнопку
-           */
-          button.addEventListener('click', function() {
-
-            /*
-             * Проверяем наличие пути
-             */
-            if (
-              !track.file_path ||
-              typeof track.file_path !== 'string' ||
-              track.file_path.trim() === ''
-            ) {
-
-              alert('Ошибка: путь к файлу не указан');
-
-              console.error(
-                'PLAY ERROR: У трека отсутствует file_path.',
-                track
-              );
-
-              return;
-            }
-
-            /*
-             * Получаем путь из JSON
-             */
-            const filePath = track.file_path.trim();
-
-            /*
-             * Проверяем, что путь ведёт
-             * в папку audio и заканчивается на .mp3
-             */
-            if (
-              !filePath.startsWith('audio/') ||
-              !filePath.toLowerCase().endsWith('.mp3')
-            ) {
-
-              alert('Ошибка: путь к файлу не указан');
-
-              console.error(
-                'PLAY ERROR: Некорректный путь к аудиофайлу ->',
-                filePath
-              );
-
-              return;
-            }
-
-            /*
-             * Для консоли показываем именно путь,
-             * который указан в JSON.
-             *
-             * Например:
-             *
-             * PLAYING: Открываем файл -> audio/track1.mp3
-             */
-            console.log(
-              'PLAYING: Открываем файл -> ' + filePath
-            );
-
-            /*
-             * Открываем через Telegram WebApp
-             */
-            tg.openLink(filePath);
-
+            card.appendChild(cover);
+            card.appendChild(title);
+            card.appendChild(btn);
+            container.appendChild(card);
           });
-
-          /*
-           * Собираем карточку
-           */
-          card.appendChild(cover);
-          card.appendChild(title);
-          card.appendChild(button);
-
-          /*
-           * Добавляем карточку на страницу
-           */
-          container.appendChild(card);
-
+        })
+        .catch(error => {
+          console.error('❌ КРИТИЧЕСКАЯ ОШИБКА:', error);
+          container.innerHTML = `
+            <p class="error-msg">
+              Ошибка загрузки списка треков.<br>
+              <b>Проверь консоль (F12) для деталей!</b><br>
+              Чаще всего: файл data.json не найден или в нем ошибка синтаксиса.
+            </p>
+          `;
         });
-
-      })
-
-      .catch(function(error) {
-
-        /*
-         * Ошибка сети уже была выведена выше,
-         * поэтому здесь ничего дополнительно не выводим.
-         */
-        if (error.message === 'NETWORK_ERROR') {
-
-          container.innerHTML = '';
-
-          const errorMessage = document.createElement('div');
-
-          errorMessage.className = 'st
+    </script>
+  </body>
+</html>
