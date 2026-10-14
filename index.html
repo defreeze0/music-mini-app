@@ -5,204 +5,270 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Music Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <!-- Библиотека для чтения тегов (обложка, исполнитель) из аудиофайлов -->
   <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.5/dist/jsmediatags.min.js"></script>
   <style>
     :root {
-      --bg-color: var(--tg-theme-bg-color, #1c1c1e);
-      --card-bg: var(--tg-theme-secondary-bg-color, #2c2c30);
-      --text-color: var(--tg-theme-text-color, #ffffff);
-      --hint-color: var(--tg-theme-hint-color, #aaaaaa);
-      --button-color: var(--tg-theme-button-color, #2481cc);
+      --bg-color: var(--tg-theme-bg-color, #0f0f10);
+      --card-bg: var(--tg-theme-secondary-bg-color, #1a1a1d);
+      --text-color: var(--tg-theme-text-color, #f5f5f7);
+      --hint-color: var(--tg-theme-hint-color, #8e8e93);
+      --button-color: var(--tg-theme-button-color, #2f80ed);
       --button-text: var(--tg-theme-button-text-color, #ffffff);
+      --stroke: rgba(255, 255, 255, 0.07);
     }
 
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
-      padding: 20px 20px 110px 20px;
+      padding: 24px 20px 130px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
 
-    h1 { color: var(--button-color); margin: 0 0 5px 0; text-align: center; font-size: 24px; font-weight: 600; }
+    .header { width: 100%; max-width: 600px; margin-bottom: 24px; }
 
-    .subtitle { color: var(--hint-color); text-align: center; margin: 0 0 20px 0; font-size: 14px; }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle { color: var(--hint-color); margin: 0; font-size: 14px; }
+
+    .actions { display: flex; gap: 10px; width: 100%; max-width: 600px; margin-bottom: 28px; }
 
     .add-btn {
+      flex-grow: 1;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
       background-color: var(--button-color);
       color: var(--button-text);
       border: none;
-      padding: 14px 30px;
-      border-radius: 12px;
-      font-size: 16px;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      margin-bottom: 25px;
+      transition: transform 0.1s, opacity 0.2s;
     }
-    .add-btn:active { opacity: 0.8; }
+    .add-btn:active { transform: scale(0.98); opacity: 0.85; }
+
+    .ghost-btn {
+      display: flex; align-items: center; justify-content: center;
+      background: transparent;
+      color: var(--hint-color);
+      border: 1px solid var(--stroke);
+      padding: 0 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .ghost-btn:active { color: var(--text-color); border-color: rgba(255,255,255,0.2); }
 
     .cards-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
       width: 100%;
       max-width: 600px;
     }
 
     .card {
       background: var(--card-bg);
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      align-items: center;
       cursor: pointer;
-      border: 2px solid transparent;
       transition: border-color 0.2s, transform 0.1s;
+      position: relative;
     }
     .card.playing { border-color: var(--button-color); }
-    .card:active { transform: scale(0.96); }
+    .card:active { transform: scale(0.97); }
 
-    .cover-placeholder {
-      width: 70px; height: 70px;
-      background-color: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+    .card-cover {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 10px;
       margin-bottom: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 30px;
-      user-select: none;
       overflow: hidden;
+      position: relative;
     }
-    .cover-placeholder img {
+    .card-cover img {
       width: 100%; height: 100%;
       object-fit: cover;
-      border-radius: 8px;
+      display: block;
+    }
+    .card-cover svg { opacity: 0.35; }
+
+    /* Эквалайзер на играющей карточке */
+    .eq {
+      position: absolute; right: 8px; bottom: 8px;
+      display: none; align-items: flex-end; gap: 2px;
+      width: 18px; height: 14px;
+    }
+    .card.playing .eq { display: flex; }
+    .eq span {
+      width: 3px; background: #fff; border-radius: 1px;
+      animation: eq 0.9s ease-in-out infinite;
+    }
+    .eq span:nth-child(1) { height: 60%; animation-delay: 0s; }
+    .eq span:nth-child(2) { height: 100%; animation-delay: 0.25s; }
+    .eq span:nth-child(3) { height: 40%; animation-delay: 0.5s; }
+    @keyframes eq {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1); }
     }
 
     .title {
-      font-weight: 600; margin-bottom: 10px; font-size: 13px;
+      font-weight: 600; font-size: 13.5px; line-height: 1.3;
       color: var(--text-color);
       word-break: break-word;
-      min-height: 34px;
-      display: flex; align-items: center; justify-content: center;
+      min-height: 36px;
+      display: flex; align-items: center;
     }
 
     .artist {
-      font-size: 11px;
+      font-size: 11.5px;
       color: var(--hint-color);
-      margin-bottom: 8px;
-      min-height: 14px;
-      word-break: break-word;
+      margin: 2px 0 8px 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
 
     .delete-btn {
-      background: rgba(255, 82, 82, 0.15);
-      color: #ff5252;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      background: rgba(255, 69, 58, 0.12);
+      color: #ff6961;
       border: none;
-      padding: 6px 10px;
-      border-radius: 8px;
+      padding: 8px;
+      border-radius: 10px;
       font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       width: 100%;
+      transition: background 0.2s;
+    }
+    .delete-btn:active { background: rgba(255, 69, 58, 0.25); }
+
+    .empty {
+      color: var(--hint-color);
+      text-align: center;
+      font-size: 14px;
+      padding: 32px 20px;
+      border: 1px dashed var(--stroke);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 600px;
+      line-height: 1.5;
     }
 
-    .error-msg {
-      color: #ff5252; text-align: center; margin-top: 20px; font-size: 14px;
-      padding: 10px; background: rgba(255, 82, 82, 0.1); border-radius: 8px;
-    }
-
-    /* Плеер внизу */
+    /* Плеер */
     .player-container {
       position: fixed;
       bottom: 0; left: 0;
       width: 100%;
       background: var(--card-bg);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 10px 12px;
+      border-top: 1px solid var(--stroke);
+      border-radius: 20px 20px 0 0;
+      padding: 12px 16px 18px 16px;
       z-index: 100;
       opacity: 0;
       visibility: hidden;
       transform: translateY(100%);
       transition: all 0.3s ease;
+      box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35);
     }
     .player-container.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    .player-row { display: flex; align-items: center; gap: 8px; max-width: 640px; margin: 0 auto; }
+    .player-row {
+      display: flex; align-items: center; gap: 10px;
+      max-width: 640px; margin: 0 auto;
+    }
 
     .player-cover {
-      width: 44px; height: 44px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
+      width: 48px; height: 48px;
+      border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 22px;
-      flex-shrink: 0;
       overflow: hidden;
+      flex-shrink: 0;
     }
     .player-cover img { width: 100%; height: 100%; object-fit: cover; }
+    .player-cover svg { opacity: 0.35; }
 
     .player-info { flex-grow: 1; min-width: 0; }
-    .player-title {
-      font-size: 13px; font-weight: 600;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      margin-bottom: 6px;
+    .player-title-row {
+      display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+      margin-bottom: 8px;
     }
-    .progress-bar { height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 2px; cursor: pointer; }
+    .player-title {
+      font-size: 13.5px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .time-label { font-size: 11px; color: var(--hint-color); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+    .progress-bar {
+      height: 18px;
+      display: flex; align-items: center;
+      cursor: pointer;
+    }
+    .progress-track { height: 4px; width: 100%; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; }
     .progress-fill { height: 100%; width: 0%; background: var(--button-color); border-radius: 2px; }
 
-    .play-btn {
-      width: 42px; height: 42px;
-      border-radius: 50%;
-      background: var(--button-color);
-      color: var(--button-text);
-      border: none;
-      font-size: 16px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .prev-next-btn {
-      width: 34px; height: 34px;
+    .ctrl-btn {
+      width: 38px; height: 38px;
       border-radius: 50%;
       background: transparent;
       color: var(--text-color);
       border: none;
-      font-size: 17px;
       cursor: pointer;
       flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.2s, background 0.2s;
     }
+    .ctrl-btn:active { background: rgba(255,255,255,0.08); }
+    .ctrl-btn.active { color: var(--button-color); }
 
-    .mini-btn {
-      width: 30px; height: 30px;
+    .play-btn {
+      width: 48px; height: 48px;
       border-radius: 50%;
-      background: transparent;
-      color: var(--hint-color);
+      background: var(--button-color);
+      color: var(--button-text);
       border: none;
-      font-size: 14px;
       cursor: pointer;
       flex-shrink: 0;
-      transition: color 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.1s;
     }
-    .mini-btn.active { color: var(--button-color); }
+    .play-btn:active { transform: scale(0.94); }
 
     #mainAudio { display: none; }
     #fileInput { display: none; }
   </style>
 </head>
 <body>
-  <h1 id="greeting">Привет! 👋</h1>
-  <p class="subtitle">Выбирай треки и слушай музыку</p>
+  <div class="header">
+    <h1 id="greeting">Музыка</h1>
+    <p class="subtitle">Ваша библиотека</p>
+  </div>
 
-  <button class="add-btn" id="addBtn">＋ Добавить трек</button>
+  <div class="actions">
+    <button class="add-btn" id="addBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+      Добавить трек
+    </button>
+    <button class="ghost-btn" id="openBrowserBtn">В браузере</button>
+  </div>
   <input type="file" id="fileInput" multiple />
 
   <div id="app" class="cards-container"></div>
@@ -210,304 +276,354 @@
   <!-- Плеер -->
   <div class="player-container" id="player">
     <div class="player-row">
-      <button class="mini-btn" id="shuffleBtn" title="Перемешать">🔀</button>
-      <button class="prev-next-btn" id="prevBtn">⏮</button>
-      <div class="player-cover" id="playerCover">🎵</div>
+      <button class="ctrl-btn" id="shuffleBtn" title="Перемешать">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="prevBtn">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 6h2v12H6zM18 6v12l-8.5-6z"/></svg>
+      </button>
+      <div class="player-cover" id="playerCover"></div>
       <div class="player-info">
-        <div class="player-title" id="playerTitle">—</div>
-        <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="player-title-row">
+          <span class="player-title" id="playerTitle">—</span>
+          <span class="time-label" id="timeLabel">0:00</span>
+        </div>
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+        </div>
       </div>
-      <button class="play-btn" id="playPauseBtn">▶</button>
-      <button class="prev-next-btn" id="nextBtn">⏭</button>
-      <button class="mini-btn" id="repeatBtn" title="Повтор трека">🔁</button>
+      <button class="play-btn" id="playPauseBtn"></button>
+      <button class="ctrl-btn" id="nextBtn">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
+      </button>
+      <button class="ctrl-btn" id="repeatBtn" title="Повтор трека">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+      </button>
     </div>
   </div>
 
   <audio id="mainAudio"></audio>
 
   <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    (function () {
+      const tg = window.Telegram.WebApp;
+      tg.ready();
+      tg.expand();
 
-    // Приветствие
-    const user = tg.initDataUnsafe?.user;
-    if (user?.first_name) {
-      document.getElementById('greeting').textContent = 'Привет, ' + user.first_name + '! 👋';
-    }
+      // ---------- Безопасное хранилище (в некоторых вебвью localStorage блокируется) ----------
+      const storage = {
+        get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+        set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+      };
 
-    const audio = document.getElementById('mainAudio');
-    const container = document.getElementById('app');
-    const player = document.getElementById('player');
-    const playPauseBtn = document.getElementById('playPauseBtn');
-    const playerTitle = document.getElementById('playerTitle');
-    const playerCover = document.getElementById('playerCover');
-    const progressFill = document.getElementById('progressFill');
-    const progressBar = document.getElementById('progressBar');
-    const shuffleBtn = document.getElementById('shuffleBtn');
-    const repeatBtn = document.getElementById('repeatBtn');
+      // ---------- Приветствие ----------
+      try {
+        const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
+        if (user && user.first_name) {
+          document.getElementById('greeting').textContent = 'Привет, ' + user.first_name;
+        }
+      } catch (e) {}
 
-    let allTracks = [];
-    let current = -1;
+      // ---------- SVG-иконки ----------
+      const ICONS = {
+        play: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+        note: '<svg viewBox="0 0 24 24" width="34" height="34" fill="#fff"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>'
+      };
 
-    // Режимы плеера (сохраняются между запусками)
-    let shuffleOn = localStorage.getItem('shuffleOn') === '1';
-    let repeatOn  = localStorage.getItem('repeatOn') === '1';
-    updateModeButtons();
-    audio.loop = repeatOn;
+      const audio = document.getElementById('mainAudio');
+      const container = document.getElementById('app');
+      const player = document.getElementById('player');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const playerTitle = document.getElementById('playerTitle');
+      const playerCover = document.getElementById('playerCover');
+      const timeLabel = document.getElementById('timeLabel');
+      const progressFill = document.getElementById('progressFill');
+      const progressBar = document.getElementById('progressBar');
+      const shuffleBtn = document.getElementById('shuffleBtn');
+      const repeatBtn = document.getElementById('repeatBtn');
 
-    function updateModeButtons() {
-      shuffleBtn.classList.toggle('active', shuffleOn);
-      repeatBtn.classList.toggle('active', repeatOn);
-    }
+      let allTracks = [];
+      let current = -1;
 
-    shuffleBtn.onclick = () => {
-      shuffleOn = !shuffleOn;
-      localStorage.setItem('shuffleOn', shuffleOn ? '1' : '0');
-      updateModeButtons();
-    };
-    repeatBtn.onclick = () => {
-      repeatOn = !repeatOn;
-      localStorage.setItem('repeatOn', repeatOn ? '1' : '0');
+      // ---------- Режимы плеера ----------
+      let shuffleOn = storage.get('shuffleOn') === '1';
+      let repeatOn = storage.get('repeatOn') === '1';
       audio.loop = repeatOn;
       updateModeButtons();
-    };
 
-    // ---------- IndexedDB: хранилище добавленных треков ----------
-    function openDB() {
-      return new Promise((resolve, reject) => {
-        const req = indexedDB.open('musicApp', 1);
-        req.onupgradeneeded = () => req.result.createObjectStore('tracks', { keyPath: 'id' });
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    }
-
-    async function idbGetAll() {
-      const db = await openDB();
-      return new Promise((resolve) => {
-        const req = db.transaction('tracks').objectStore('tracks').getAll();
-        req.onsuccess = () => resolve(req.result || []);
-        req.onerror = () => resolve([]);
-      });
-    }
-
-    async function idbPut(track) {
-      const db = await openDB();
-      db.transaction('tracks', 'readwrite').objectStore('tracks').put(track);
-    }
-
-    async function idbDelete(id) {
-      const db = await openDB();
-      db.transaction('tracks', 'readwrite').objectStore('tracks').delete(id);
-    }
-
-    // ---------- Чтение тегов из файла ----------
-    function readTags(file) {
-      return new Promise((resolve) => {
-        try {
-          window.jsmediatags.read(file, {
-            onSuccess: (result) => resolve(result.tags || {}),
-            onError: () => resolve({})
-          });
-        } catch (e) {
-          resolve({});
-        }
-      });
-    }
-
-    function pictureToDataURL(pic) {
-      if (!pic || !pic.data) return null;
-      let binary = '';
-      const bytes = new Uint8Array(pic.data);
-      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
-      return 'data:' + (pic.format || 'image/jpeg') + ';base64,' + btoa(binary);
-    }
-
-    // ---------- Рендер списка ----------
-    function render() {
-      container.innerHTML = '';
-      if (allTracks.length === 0) {
-        container.innerHTML = '<p class="error-msg">Треков пока нет — нажми «Добавить трек».</p>';
-        return;
+      function updateModeButtons() {
+        shuffleBtn.classList.toggle('active', shuffleOn);
+        repeatBtn.classList.toggle('active', repeatOn);
       }
-      allTracks.forEach((track, i) => {
-        const card = document.createElement('div');
-        card.className = 'card' + (i === current ? ' playing' : '');
 
-        const cover = document.createElement('div');
-        cover.className = 'cover-placeholder';
+      shuffleBtn.addEventListener('click', () => {
+        shuffleOn = !shuffleOn;
+        storage.set('shuffleOn', shuffleOn ? '1' : '0');
+        updateModeButtons();
+      });
+
+      repeatBtn.addEventListener('click', () => {
+        repeatOn = !repeatOn;
+        storage.set('repeatOn', repeatOn ? '1' : '0');
+        audio.loop = repeatOn;
+        updateModeButtons();
+      });
+
+      // ---------- IndexedDB ----------
+      function openDB() {
+        return new Promise((resolve, reject) => {
+          const req = indexedDB.open('musicApp', 1);
+          req.onupgradeneeded = () => req.result.createObjectStore('tracks', { keyPath: 'id' });
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function idbGetAll() {
+        const db = await openDB();
+        return new Promise((resolve) => {
+          const req = db.transaction('tracks').objectStore('tracks').getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+      }
+
+      async function idbPut(track) {
+        const db = await openDB();
+        db.transaction('tracks', 'readwrite').objectStore('tracks').put(track);
+      }
+
+      async function idbDelete(id) {
+        const db = await openDB();
+        db.transaction('tracks', 'readwrite').objectStore('tracks').delete(id);
+      }
+
+      // ---------- Теги из аудиофайла ----------
+      function readTags(file) {
+        return new Promise((resolve) => {
+          if (!window.jsmediatags) { resolve({}); return; }
+          try {
+            window.jsmediatags.read(file, {
+              onSuccess: (result) => resolve(result.tags || {}),
+              onError: () => resolve({})
+            });
+          } catch (e) { resolve({}); }
+        });
+      }
+
+      function pictureToDataURL(pic) {
+        if (!pic || !pic.data) return null;
+        let binary = '';
+        const bytes = new Uint8Array(pic.data);
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        return 'data:' + (pic.format || 'image/jpeg') + ';base64,' + btoa(binary);
+      }
+
+      // ---------- Градиент-обложка по названию ----------
+      function hashCode(str) {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) { h = (h * 31 + str.charCodeAt(i)) | 0; }
+        return Math.abs(h);
+      }
+
+      function gradientFor(title) {
+        const h = hashCode(title || 'track') % 360;
+        return 'linear-gradient(135deg, hsl(' + h + ', 55%, 40%), hsl(' + ((h + 50) % 360) + ', 55%, 25%))';
+      }
+
+      function setCoverContent(el, track) {
+        el.innerHTML = '';
         if (track.coverUrl) {
           const img = document.createElement('img');
           img.src = track.coverUrl;
           img.alt = '';
-          cover.appendChild(img);
+          el.appendChild(img);
         } else {
-          cover.textContent = track.cover || '🎵';
+          el.style.background = gradientFor(track.title);
+          el.innerHTML = ICONS.note;
         }
+      }
 
-        const title = document.createElement('div');
-        title.className = 'title';
-        title.textContent = track.title || 'Без названия';
-
-        card.appendChild(cover);
-        card.appendChild(title);
-
-        if (track.artist) {
-          const artist = document.createElement('div');
-          artist.className = 'artist';
-          artist.textContent = track.artist;
-          card.appendChild(artist);
+      // ---------- Рендер списка ----------
+      function render() {
+        container.innerHTML = '';
+        if (allTracks.length === 0) {
+          container.innerHTML = '<div class="empty">Библиотека пуста.<br>Добавьте треки, чтобы начать слушать.</div>';
+          return;
         }
+        allTracks.forEach((track, i) => {
+          const card = document.createElement('div');
+          card.className = 'card' + (i === current ? ' playing' : '');
 
-        if (track.local) {
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = 'Удалить';
-          del.onclick = async (e) => {
-            e.stopPropagation();
-            await idbDelete(track.id);
-            if (current === i) { audio.pause(); current = -1; player.classList.remove('active'); }
-            await loadTracks();
-          };
-          card.appendChild(del);
+          const cover = document.createElement('div');
+          cover.className = 'card-cover';
+          setCoverContent(cover, track);
+          cover.insertAdjacentHTML('beforeend', '<div class="eq"><span></span><span></span><span></span></div>');
+
+          const title = document.createElement('div');
+          title.className = 'title';
+          title.textContent = track.title || 'Без названия';
+
+          card.appendChild(cover);
+          card.appendChild(title);
+
+          if (track.artist) {
+            const artist = document.createElement('div');
+            artist.className = 'artist';
+            artist.textContent = track.artist;
+            card.appendChild(artist);
+          }
+
+          if (track.local) {
+            const del = document.createElement('button');
+            del.className = 'delete-btn';
+            del.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"/></svg> Удалить';
+            del.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              await idbDelete(track.id);
+              if (current === i) {
+                audio.pause();
+                current = -1;
+                player.classList.remove('active');
+              }
+              await loadTracks();
+            });
+            card.appendChild(del);
+          }
+
+          card.addEventListener('click', () => playTrack(i));
+          container.appendChild(card);
+        });
+      }
+
+      // ---------- Загрузка треков ----------
+      async function loadTracks() {
+        let jsonTracks = [];
+        try {
+          const resp = await fetch('data.json');
+          if (resp.ok) jsonTracks = await resp.json();
+        } catch (e) {}
+
+        const localTracks = await idbGetAll();
+        localTracks.sort((a, b) => (a.addedAt || 0) - (b.addedAt || 0));
+
+        allTracks = [
+          ...jsonTracks.map(t => ({
+            id: t.id, title: t.title, artist: '', coverUrl: null,
+            src: t.file_path, local: false
+          })),
+          ...localTracks.map(t => ({
+            id: t.id, title: t.title, artist: t.artist || '', coverUrl: t.coverUrl || null,
+            blob: t.blob, local: true
+          }))
+        ];
+        render();
+      }
+
+      // ---------- Плеер ----------
+      function fmtTime(s) {
+        if (!isFinite(s)) return '0:00';
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+      }
+
+      function playTrack(i) {
+        current = i;
+        const track = allTracks[i];
+
+        audio.src = track.src || URL.createObjectURL(track.blob);
+        playerTitle.textContent = track.artist ? track.artist + ' — ' + track.title : track.title;
+        setCoverContent(playerCover, track);
+        player.classList.add('active');
+        audio.play();
+        render();
+      }
+
+      function togglePlay() {
+        if (current === -1) { if (allTracks.length) playTrack(0); return; }
+        if (audio.paused) audio.play(); else audio.pause();
+      }
+
+      function nextIndex() {
+        if (allTracks.length < 2) return current;
+        if (shuffleOn) {
+          let next;
+          do { next = Math.floor(Math.random() * allTracks.length); } while (next === current);
+          return next;
         }
+        return current < allTracks.length - 1 ? current + 1 : 0;
+      }
 
-        card.onclick = () => playTrack(i);
-        container.appendChild(card);
+      audio.addEventListener('play', () => { playPauseBtn.innerHTML = ICONS.pause; });
+      audio.addEventListener('pause', () => { playPauseBtn.innerHTML = ICONS.play; });
+
+      audio.addEventListener('timeupdate', () => {
+        if (audio.duration) {
+          progressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+          timeLabel.textContent = fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration);
+        }
       });
-    }
 
-    // ---------- Загрузка треков ----------
-    async function loadTracks() {
-      let jsonTracks = [];
-      try {
-        const resp = await fetch('data.json');
-        if (resp.ok) jsonTracks = await resp.json();
-      } catch (e) { /* data.json нет — не страшно */ }
+      audio.addEventListener('ended', () => {
+        if (audio.loop) return;
+        playTrack(nextIndex());
+      });
 
-      const localTracks = await idbGetAll();
-      localTracks.sort((a, b) => a.addedAt - b.addedAt);
+      playPauseBtn.addEventListener('click', togglePlay);
+      playPauseBtn.innerHTML = ICONS.play;
 
-      allTracks = [
-        ...jsonTracks.map(t => ({
-          id: t.id, title: t.title, artist: '', cover: t.cover || '🎵',
-          coverUrl: null, src: t.file_path, local: false
-        })),
-        ...localTracks.map(t => ({
-          id: t.id, title: t.title, artist: t.artist || '', cover: t.cover || '🎵',
-          coverUrl: t.coverUrl || null, blob: t.blob, local: true
-        }))
-      ];
-      render();
-    }
+      document.getElementById('prevBtn').addEventListener('click', () => {
+        if (current > 0) playTrack(current - 1);
+        else if (allTracks.length) playTrack(allTracks.length - 1);
+      });
+      document.getElementById('nextBtn').addEventListener('click', () => {
+        if (allTracks.length) playTrack(nextIndex());
+      });
 
-    // ---------- Плеер ----------
-    function setPlayerCover(track) {
-      playerCover.innerHTML = '';
-      if (track.coverUrl) {
-        const img = document.createElement('img');
-        img.src = track.coverUrl;
-        img.alt = '';
-        playerCover.appendChild(img);
-      } else {
-        playerCover.textContent = track.cover || '🎵';
-      }
-    }
+      progressBar.addEventListener('click', (e) => {
+        if (!audio.duration) return;
+        const rect = progressBar.getBoundingClientRect();
+        audio.currentTime = (e.clientX - rect.left) / rect.width * audio.duration;
+      });
 
-    function playTrack(i) {
-      current = i;
-      const track = allTracks[i];
+      // ---------- Добавление треков ----------
+      const fileInput = document.getElementById('fileInput');
+      document.getElementById('addBtn').addEventListener('click', () => fileInput.click());
 
-      audio.src = track.src || URL.createObjectURL(track.blob);
-      playerTitle.textContent = track.artist ? track.artist + ' — ' + track.title : track.title;
-      setPlayerCover(track);
-      player.classList.add('active');
-      audio.play();
-      render();
-    }
-
-    function togglePlay() {
-      if (current === -1) { if (allTracks.length) playTrack(0); return; }
-      if (audio.paused) audio.play(); else audio.pause();
-    }
-
-    audio.onplay  = () => playPauseBtn.textContent = '⏸';
-    audio.onpause = () => playPauseBtn.textContent = '▶';
-
-    audio.ontimeupdate = () => {
-      if (audio.duration) {
-        progressFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
-      }
-    };
-
-    audio.onended = () => {
-      if (audio.loop) return; // повтор трека включён — ended не сработает, но на всякий случай
-      if (allTracks.length < 2) return;
-      if (shuffleOn) {
-        let next;
-        do { next = Math.floor(Math.random() * allTracks.length); } while (next === current);
-        playTrack(next);
-      } else if (current < allTracks.length - 1) {
-        playTrack(current + 1);
-      }
-    };
-
-    playPauseBtn.onclick = togglePlay;
-
-    document.getElementById('prevBtn').onclick = () => {
-      if (current > 0) playTrack(current - 1);
-    };
-    document.getElementById('nextBtn').onclick = () => {
-      if (shuffleOn && allTracks.length > 1) {
-        let next;
-        do { next = Math.floor(Math.random() * allTracks.length); } while (next === current);
-        playTrack(next);
-      } else if (current < allTracks.length - 1) {
-        playTrack(current + 1);
-      }
-    };
-
-    progressBar.onclick = (e) => {
-      if (!audio.duration) return;
-      const rect = progressBar.getBoundingClientRect();
-      audio.currentTime = (e.clientX - rect.left) / rect.width * audio.duration;
-    };
-
-    // ---------- Добавление треков ----------
-    const fileInput = document.getElementById('fileInput');
-    document.getElementById('addBtn').onclick = () => fileInput.click();
-
-    fileInput.onchange = async () => {
-      const okExt = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'wav', 'flac', 'opus', 'mp4'];
-      for (const file of fileInput.files) {
-        const ext = (file.name.split('.').pop() || '').toLowerCase();
-        const isAudio = file.type.startsWith('audio/') || okExt.includes(ext);
-        if (!isAudio) {
-          alert('Файл «' + file.name + '» не похож на аудио — пропускаю.');
-          continue;
+      fileInput.addEventListener('change', async () => {
+        const okExt = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'wav', 'flac', 'opus', 'mp4'];
+        for (const file of fileInput.files) {
+          const ext = (file.name.split('.').pop() || '').toLowerCase();
+          const isAudio = (file.type && file.type.startsWith('audio/')) || okExt.includes(ext);
+          if (!isAudio) {
+            alert('Файл «' + file.name + '» не похож на аудио — пропущен.');
+            continue;
+          }
+          const tags = await readTags(file);
+          const fallbackTitle = file.name.replace(/\.[^.]+$/, '');
+          await idbPut({
+            id: Date.now() + Math.random(),
+            addedAt: Date.now(),
+            title: tags.title || fallbackTitle,
+            artist: tags.artist || '',
+            coverUrl: pictureToDataURL(tags.picture),
+            blob: file
+          });
         }
+        fileInput.value = '';
+        await loadTracks();
+      });
 
-        // Читаем теги: название, исполнитель, обложка
-        const tags = await readTags(file);
-        const fallbackTitle = file.name.replace(/\.[^.]+$/, '');
-        const track = {
-          id: Date.now() + Math.random(),
-          addedAt: Date.now(),
-          title: tags.title || fallbackTitle,
-          artist: tags.artist || '',
-          cover: '🎧',
-          coverUrl: pictureToDataURL(tags.picture),
-          blob: file
-        };
-        await idbPut(track);
-      }
-      fileInput.value = '';
-      await loadTracks();
-    };
+      // ---------- Открытие в браузере ----------
+      document.getElementById('openBrowserBtn').addEventListener('click', () => {
+        tg.openLink('https://defreeze0.github.io/music-mini-app/');
+      });
 
-    // Старт
-    loadTracks();
+      // ---------- Старт ----------
+      loadTracks();
+    })();
   </script>
 </body>
 </html>
