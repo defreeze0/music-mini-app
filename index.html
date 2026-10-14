@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Music Mini App</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Библиотека для чтения тегов (обложка, исполнитель) из аудиофайлов -->
+  <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.5/dist/jsmediatags.min.js"></script>
   <style>
     :root {
       --bg-color: var(--tg-theme-bg-color, #1c1c1e);
@@ -22,7 +24,7 @@
       background-color: var(--bg-color);
       color: var(--text-color);
       margin: 0;
-      padding: 20px 20px 100px 20px; /* снизу отступ под плеер */
+      padding: 20px 20px 110px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -78,6 +80,12 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 30px;
       user-select: none;
+      overflow: hidden;
+    }
+    .cover-placeholder img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
     }
 
     .title {
@@ -86,6 +94,14 @@
       word-break: break-word;
       min-height: 34px;
       display: flex; align-items: center; justify-content: center;
+    }
+
+    .artist {
+      font-size: 11px;
+      color: var(--hint-color);
+      margin-bottom: 8px;
+      min-height: 14px;
+      word-break: break-word;
     }
 
     .delete-btn {
@@ -111,7 +127,7 @@
       width: 100%;
       background: var(--card-bg);
       border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 10px 20px;
+      padding: 10px 12px;
       z-index: 100;
       opacity: 0;
       visibility: hidden;
@@ -120,7 +136,7 @@
     }
     .player-container.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    .player-row { display: flex; align-items: center; gap: 12px; max-width: 600px; margin: 0 auto; }
+    .player-row { display: flex; align-items: center; gap: 8px; max-width: 640px; margin: 0 auto; }
 
     .player-cover {
       width: 44px; height: 44px;
@@ -129,11 +145,13 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 22px;
       flex-shrink: 0;
+      overflow: hidden;
     }
+    .player-cover img { width: 100%; height: 100%; object-fit: cover; }
 
     .player-info { flex-grow: 1; min-width: 0; }
     .player-title {
-      font-size: 14px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       margin-bottom: 6px;
     }
@@ -153,15 +171,28 @@
     }
 
     .prev-next-btn {
-      width: 36px; height: 36px;
+      width: 34px; height: 34px;
       border-radius: 50%;
       background: transparent;
       color: var(--text-color);
       border: none;
-      font-size: 18px;
+      font-size: 17px;
       cursor: pointer;
       flex-shrink: 0;
     }
+
+    .mini-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--hint-color);
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+    .mini-btn.active { color: var(--button-color); }
 
     #mainAudio { display: none; }
     #fileInput { display: none; }
@@ -169,7 +200,7 @@
 </head>
 <body>
   <h1 id="greeting">Привет! 👋</h1>
-  <p class="subtitle">Выбирай треки и слушай музыку (v2)</p>
+  <p class="subtitle">Выбирай треки и слушай музыку</p>
 
   <button class="add-btn" id="addBtn">＋ Добавить трек</button>
   <input type="file" id="fileInput" multiple />
@@ -179,6 +210,7 @@
   <!-- Плеер -->
   <div class="player-container" id="player">
     <div class="player-row">
+      <button class="mini-btn" id="shuffleBtn" title="Перемешать">🔀</button>
       <button class="prev-next-btn" id="prevBtn">⏮</button>
       <div class="player-cover" id="playerCover">🎵</div>
       <div class="player-info">
@@ -187,6 +219,7 @@
       </div>
       <button class="play-btn" id="playPauseBtn">▶</button>
       <button class="prev-next-btn" id="nextBtn">⏭</button>
+      <button class="mini-btn" id="repeatBtn" title="Повтор трека">🔁</button>
     </div>
   </div>
 
@@ -211,9 +244,34 @@
     const playerCover = document.getElementById('playerCover');
     const progressFill = document.getElementById('progressFill');
     const progressBar = document.getElementById('progressBar');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const repeatBtn = document.getElementById('repeatBtn');
 
-    let allTracks = [];   // все треки: из JSON + добавленные
-    let current = -1;     // индекс играющего трека
+    let allTracks = [];
+    let current = -1;
+
+    // Режимы плеера (сохраняются между запусками)
+    let shuffleOn = localStorage.getItem('shuffleOn') === '1';
+    let repeatOn  = localStorage.getItem('repeatOn') === '1';
+    updateModeButtons();
+    audio.loop = repeatOn;
+
+    function updateModeButtons() {
+      shuffleBtn.classList.toggle('active', shuffleOn);
+      repeatBtn.classList.toggle('active', repeatOn);
+    }
+
+    shuffleBtn.onclick = () => {
+      shuffleOn = !shuffleOn;
+      localStorage.setItem('shuffleOn', shuffleOn ? '1' : '0');
+      updateModeButtons();
+    };
+    repeatBtn.onclick = () => {
+      repeatOn = !repeatOn;
+      localStorage.setItem('repeatOn', repeatOn ? '1' : '0');
+      audio.loop = repeatOn;
+      updateModeButtons();
+    };
 
     // ---------- IndexedDB: хранилище добавленных треков ----------
     function openDB() {
@@ -244,6 +302,28 @@
       db.transaction('tracks', 'readwrite').objectStore('tracks').delete(id);
     }
 
+    // ---------- Чтение тегов из файла ----------
+    function readTags(file) {
+      return new Promise((resolve) => {
+        try {
+          window.jsmediatags.read(file, {
+            onSuccess: (result) => resolve(result.tags || {}),
+            onError: () => resolve({})
+          });
+        } catch (e) {
+          resolve({});
+        }
+      });
+    }
+
+    function pictureToDataURL(pic) {
+      if (!pic || !pic.data) return null;
+      let binary = '';
+      const bytes = new Uint8Array(pic.data);
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return 'data:' + (pic.format || 'image/jpeg') + ';base64,' + btoa(binary);
+    }
+
     // ---------- Рендер списка ----------
     function render() {
       container.innerHTML = '';
@@ -257,7 +337,14 @@
 
         const cover = document.createElement('div');
         cover.className = 'cover-placeholder';
-        cover.textContent = track.cover || '🎵';
+        if (track.coverUrl) {
+          const img = document.createElement('img');
+          img.src = track.coverUrl;
+          img.alt = '';
+          cover.appendChild(img);
+        } else {
+          cover.textContent = track.cover || '🎵';
+        }
 
         const title = document.createElement('div');
         title.className = 'title';
@@ -266,7 +353,13 @@
         card.appendChild(cover);
         card.appendChild(title);
 
-        // Удалять можно только локально добавленные треки
+        if (track.artist) {
+          const artist = document.createElement('div');
+          artist.className = 'artist';
+          artist.textContent = track.artist;
+          card.appendChild(artist);
+        }
+
         if (track.local) {
           const del = document.createElement('button');
           del.className = 'delete-btn';
@@ -287,37 +380,48 @@
 
     // ---------- Загрузка треков ----------
     async function loadTracks() {
-      // 1. Треки из data.json (если файл есть — используем, если нет — пропускаем)
       let jsonTracks = [];
       try {
         const resp = await fetch('data.json');
         if (resp.ok) jsonTracks = await resp.json();
       } catch (e) { /* data.json нет — не страшно */ }
 
-      // 2. Треки, добавленные пользователем (хранятся в браузере)
       const localTracks = await idbGetAll();
+      localTracks.sort((a, b) => a.addedAt - b.addedAt);
 
       allTracks = [
         ...jsonTracks.map(t => ({
-          id: t.id, title: t.title, cover: t.cover || '🎵',
-          src: t.file_path, local: false
+          id: t.id, title: t.title, artist: '', cover: t.cover || '🎵',
+          coverUrl: null, src: t.file_path, local: false
         })),
         ...localTracks.map(t => ({
-          id: t.id, title: t.title, cover: t.cover || '🎵',
-          blob: t.blob, local: true
+          id: t.id, title: t.title, artist: t.artist || '', cover: t.cover || '🎵',
+          coverUrl: t.coverUrl || null, blob: t.blob, local: true
         }))
       ];
       render();
     }
 
     // ---------- Плеер ----------
+    function setPlayerCover(track) {
+      playerCover.innerHTML = '';
+      if (track.coverUrl) {
+        const img = document.createElement('img');
+        img.src = track.coverUrl;
+        img.alt = '';
+        playerCover.appendChild(img);
+      } else {
+        playerCover.textContent = track.cover || '🎵';
+      }
+    }
+
     function playTrack(i) {
       current = i;
       const track = allTracks[i];
 
       audio.src = track.src || URL.createObjectURL(track.blob);
-      playerTitle.textContent = track.title;
-      playerCover.textContent = track.cover || '🎵';
+      playerTitle.textContent = track.artist ? track.artist + ' — ' + track.title : track.title;
+      setPlayerCover(track);
       player.classList.add('active');
       audio.play();
       render();
@@ -337,7 +441,17 @@
       }
     };
 
-    audio.onended = () => { if (current < allTracks.length - 1) playTrack(current + 1); };
+    audio.onended = () => {
+      if (audio.loop) return; // повтор трека включён — ended не сработает, но на всякий случай
+      if (allTracks.length < 2) return;
+      if (shuffleOn) {
+        let next;
+        do { next = Math.floor(Math.random() * allTracks.length); } while (next === current);
+        playTrack(next);
+      } else if (current < allTracks.length - 1) {
+        playTrack(current + 1);
+      }
+    };
 
     playPauseBtn.onclick = togglePlay;
 
@@ -345,7 +459,13 @@
       if (current > 0) playTrack(current - 1);
     };
     document.getElementById('nextBtn').onclick = () => {
-      if (current < allTracks.length - 1) playTrack(current + 1);
+      if (shuffleOn && allTracks.length > 1) {
+        let next;
+        do { next = Math.floor(Math.random() * allTracks.length); } while (next === current);
+        playTrack(next);
+      } else if (current < allTracks.length - 1) {
+        playTrack(current + 1);
+      }
     };
 
     progressBar.onclick = (e) => {
@@ -367,10 +487,17 @@
           alert('Файл «' + file.name + '» не похож на аудио — пропускаю.');
           continue;
         }
+
+        // Читаем теги: название, исполнитель, обложка
+        const tags = await readTags(file);
+        const fallbackTitle = file.name.replace(/\.[^.]+$/, '');
         const track = {
           id: Date.now() + Math.random(),
-          title: file.name.replace(/\.[^.]+$/, ''), // имя файла без расширения
+          addedAt: Date.now(),
+          title: tags.title || fallbackTitle,
+          artist: tags.artist || '',
           cover: '🎧',
+          coverUrl: pictureToDataURL(tags.picture),
           blob: file
         };
         await idbPut(track);
