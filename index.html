@@ -57,43 +57,10 @@
     .search-input:focus { border-color: rgba(255, 255, 255, 0.18); }
     .search-input::placeholder { color: var(--hint); }
 
-    .tabs { display: flex; gap: 8px; margin-top: 12px; }
-    .tab {
-      flex: 1;
-      padding: 10px;
-      border-radius: 10px;
-      background: transparent;
-      border: 1px solid var(--stroke);
-      color: var(--hint);
-      font-family: inherit;
-      font-size: 13.5px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .tab.active { background: var(--surface); color: var(--text); border-color: transparent; }
-
-    .chips { display: none; gap: 8px; margin-top: 10px; overflow-x: auto; }
-    .chips.visible { display: flex; }
-    .chip {
-      padding: 7px 14px;
-      border-radius: 20px;
-      background: transparent;
-      border: 1px solid var(--stroke);
-      color: var(--hint);
-      font-family: inherit;
-      font-size: 12.5px;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.2s;
-    }
-    .chip.active { background: var(--surface); color: var(--text); border-color: transparent; }
-
     .add-btn {
       margin-top: 14px;
       width: 100%;
-      display: none; align-items: center; justify-content: center; gap: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
       background: var(--accent);
       color: var(--on-accent);
       border: none;
@@ -105,11 +72,9 @@
       cursor: pointer;
       transition: transform 0.1s, opacity 0.2s;
     }
-    .add-btn.visible { display: flex; }
     .add-btn:active { transform: scale(0.98); opacity: 0.85; }
 
-    .lib-tools { display: none; gap: 8px; margin-top: 10px; }
-    .lib-tools.visible { display: flex; }
+    .lib-tools { display: flex; gap: 8px; margin-top: 10px; }
     .tool-btn {
       flex: 1;
       padding: 10px;
@@ -126,21 +91,6 @@
     .tool-btn:active { color: var(--text); }
 
     .list { margin-top: 10px; }
-    .online-hint {
-      margin-top: 14px;
-      color: var(--hint);
-      font-size: 12.5px;
-      line-height: 1.6;
-      text-align: center;
-      padding: 16px;
-    }
-    .status-line {
-      margin-top: 20px;
-      color: var(--hint);
-      font-size: 13.5px;
-      text-align: center;
-      padding: 12px;
-    }
 
     .row {
       display: flex; align-items: center; gap: 14px;
@@ -211,7 +161,6 @@
       transition: color 0.2s;
     }
     .row-action:hover { color: var(--text); }
-    .row-action.add:hover { color: var(--accent); }
 
     .empty {
       margin-top: 14px;
@@ -381,21 +330,6 @@
     }
     .fp-play:active { transform: scale(0.94); }
 
-    .radio-badge {
-      position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
-      display: none; align-items: center; gap: 6px;
-      color: var(--accent);
-      font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
-      z-index: 1;
-    }
-    .radio-badge.on { display: flex; }
-    .radio-badge .dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent);
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-
     #mainAudio, #shadowAudio { display: none; }
     #fileInput, #importInput { display: none; }
   </style>
@@ -410,23 +344,12 @@
       <input class="search-input" id="searchInput" type="text" placeholder="Поиск по трекам" />
     </div>
 
-    <div class="tabs">
-      <button class="tab active" id="tabLib">Библиотека</button>
-      <button class="tab" id="tabOnline">Онлайн</button>
-    </div>
-
-    <div class="chips" id="chips">
-      <button class="chip active" data-src="audius">Audius</button>
-      <button class="chip" data-src="jamendo">Jamendo</button>
-      <button class="chip" data-src="archive">Архив</button>
-    </div>
-
-    <button class="add-btn visible" id="addBtn">
+    <button class="add-btn" id="addBtn">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
       Добавить трек
     </button>
 
-    <div class="lib-tools visible" id="libTools">
+    <div class="lib-tools">
       <button class="tool-btn" id="exportBtn">Экспорт библиотеки</button>
       <button class="tool-btn" id="importBtn">Импорт</button>
     </div>
@@ -435,7 +358,6 @@
     <input type="file" id="importInput" accept=".json,application/json" />
 
     <div id="app" class="list"></div>
-    <div id="onlineBox" class="list" style="display:none;"></div>
   </div>
 
   <!-- Мини-плеер -->
@@ -470,8 +392,6 @@
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
       </button>
     </div>
-
-    <div class="radio-badge" id="radioBadge"><span class="dot"></span>Радио по вайбу</div>
 
     <div class="fp-cover" id="fpCover"></div>
 
@@ -511,9 +431,6 @@
           <button class="icon-btn repeat-toggle" id="repeatBtn">
             <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
           </button>
-          <button class="icon-btn" id="radioBtn" title="Радио по вайбу">
-            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm-3.54 3.54-1.41-1.41a7 7 0 0 1 0-9.9l1.41 1.42a5 5 0 0 0 0 7.07zm7.08 0 1.41-1.41a7 7 0 0 0 0-9.9l-1.41 1.42a5 5 0 0 1 0 7.07z"/></svg>
-          </button>
         </div>
       </div>
     </div>
@@ -543,24 +460,15 @@
         playSm: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
         pause: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
         pauseSm: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
-        trash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"/></svg>',
-        plus: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>'
+        trash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"/></svg>'
       };
-
-      const JAMENDO_KEY = '';
 
       const audioA = document.getElementById('mainAudio');
       const audioB = document.getElementById('shadowAudio');
-      let audio = audioA; // активный элемент; при кроссфейде роли меняются
+      let audio = audioA;
 
       const container = document.getElementById('app');
-      const onlineBox = document.getElementById('onlineBox');
       const searchInput = document.getElementById('searchInput');
-      const tabLib = document.getElementById('tabLib');
-      const tabOnline = document.getElementById('tabOnline');
-      const chips = document.getElementById('chips');
-      const addBtn = document.getElementById('addBtn');
-      const libTools = document.getElementById('libTools');
       const importInput = document.getElementById('importInput');
 
       const miniPlayer = document.getElementById('miniPlayer');
@@ -579,8 +487,6 @@
       const fpCur = document.getElementById('fpCur');
       const fpDur = document.getElementById('fpDur');
       const playPauseBtn = document.getElementById('playPauseBtn');
-      const radioBtn = document.getElementById('radioBtn');
-      const radioBadge = document.getElementById('radioBadge');
       const speedBtn = document.getElementById('speedBtn');
       const crossBtn = document.getElementById('crossBtn');
       const shareBtn = document.getElementById('shareBtn');
@@ -591,14 +497,10 @@
 
       let allTracks = [];
       let current = -1;
-      let activeTab = 'lib';
-      let onlineSource = 'audius';
-      let lastOnline = null;
 
       let shuffleOn = storage.get('shuffleOn') === '1';
       let repeatOn = storage.get('repeatOn') === '1';
       let crossOn = storage.get('crossOn') !== '0';
-      let radioOn = false;
       audioA.loop = repeatOn;
       let curRate = parseFloat(storage.get('rate') || '1') || 1;
       updateModeButtons();
@@ -607,10 +509,8 @@
         shuffleBtns.forEach(b => b.classList.toggle('accented', shuffleOn));
         repeatBtns.forEach(b => b.classList.toggle('accented', repeatOn));
         crossBtn.classList.toggle('accented', crossOn);
-        radioBtn.classList.toggle('accented', radioOn);
-        radioBadge.classList.toggle('on', radioOn);
         speedBtn.classList.toggle('accented', curRate !== 1);
-        speedBtn.textContent = (curRate + '').replace('0.75', '¾').replace('.', ',') + '×';
+        speedBtn.textContent = (curRate + '').replace('.', ',') + '×';
       }
 
       function applyRate() {
@@ -648,12 +548,6 @@
         storage.set('rate', curRate);
         applyRate();
         updateModeButtons();
-      });
-
-      radioBtn.addEventListener('click', () => {
-        radioOn = !radioOn;
-        updateModeButtons();
-        if (radioOn && current === -1 && lastOnline) playOnlineItem(lastOnline);
       });
 
       // ---------- IndexedDB ----------
@@ -777,7 +671,7 @@
       let actx = null, analyser = null, dataArr = null;
 
       function ensureAudioGraph() {
-        if (actx || !window.AudioContext && !window.webkitAudioContext) return;
+        if (actx || (!window.AudioContext && !window.webkitAudioContext)) return;
         try {
           const Ctx = window.AudioContext || window.webkitAudioContext;
           actx = new Ctx();
@@ -791,7 +685,7 @@
           analyser.connect(actx.destination);
           dataArr = new Uint8Array(analyser.frequencyBinCount);
         } catch (e) {
-          actx = null; analyser = null; // звук играет как обычно, визуализатор уйдёт в симуляцию
+          actx = null; analyser = null;
         }
       }
 
@@ -829,8 +723,9 @@
         ctx.clearRect(0, 0, w, h);
 
         const rect = fpCover.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2 - vizCanvas.getBoundingClientRect().left;
-        const cy = rect.top + rect.height / 2 - vizCanvas.getBoundingClientRect().top;
+        const vr = vizCanvas.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2 - vr.left;
+        const cy = rect.top + rect.height / 2 - vr.top;
         const r0 = rect.width / 2 + 14;
 
         const playing = !audio.paused && !audio.ended;
@@ -877,261 +772,6 @@
         }
       }
 
-      // ---------- Табы и источники ----------
-      function setTab(tab) {
-        activeTab = tab;
-        tabLib.classList.toggle('active', tab === 'lib');
-        tabOnline.classList.toggle('active', tab === 'online');
-        chips.classList.toggle('visible', tab === 'online');
-        container.style.display = tab === 'lib' ? '' : 'none';
-        onlineBox.style.display = tab === 'online' ? '' : 'none';
-        addBtn.classList.toggle('visible', tab === 'lib');
-        libTools.classList.toggle('visible', tab === 'lib');
-        searchInput.placeholder = tab === 'online' ? 'Поиск музыки онлайн' : 'Поиск по трекам';
-        if (tab === 'online') runOnlineSearch();
-      }
-
-      tabLib.addEventListener('click', () => setTab('lib'));
-      tabOnline.addEventListener('click', () => setTab('online'));
-
-      chips.querySelectorAll('.chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          onlineSource = chip.dataset.src;
-          chips.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === chip));
-          runOnlineSearch();
-        });
-      });
-
-      // ---------- Источники ----------
-      const APP_NAME = 'music-mini-app';
-      let audiusHost = null;
-
-      async function getAudiusHost() {
-        if (audiusHost) return audiusHost;
-        const r = await fetch('https://api.audius.co');
-        const j = await r.json();
-        audiusHost = j.data[0];
-        return audiusHost;
-      }
-
-      function audiusStream(id) {
-        return (audiusHost || 'https://discoveryprovider.audius.co') + '/v1/tracks/' + id + '/stream?app_name=' + APP_NAME;
-      }
-
-      async function searchAudius(q) {
-        const host = await getAudiusHost();
-        const r = await fetch(host + '/v1/tracks/search?query=' + encodeURIComponent(q) + '&app_name=' + APP_NAME);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const j = await r.json();
-        return (j.data || []).slice(0, 15).map(t => ({
-          key: 'audius:' + t.id,
-          title: t.title || 'Без названия',
-          artist: t.user ? t.user.name : '',
-          art: t.artwork ? (t.artwork['150x150'] || t.artwork['480x480']) : null,
-          stream: audiusStream(t.id),
-          audiusId: t.id
-        }));
-      }
-
-      async function searchJamendo(q) {
-        if (!JAMENDO_KEY) throw new Error('no-key');
-        const r = await fetch('https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_KEY +
-          '&format=json&limit=15&search=' + encodeURIComponent(q));
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const j = await r.json();
-        return (j.results || []).map(t => ({
-          key: 'jamendo:' + t.id,
-          title: t.name || 'Без названия',
-          artist: t.artist_name || '',
-          art: t.image || t.album_image || null,
-          stream: t.audio || t.audiodownload,
-          audiodownload: t.audiodownload_allowed !== false ? t.audiodownload : null
-        }));
-      }
-
-      async function searchArchive(q) {
-        const url = 'https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q + ' AND mediatype:audio') +
-          '&fl[]=identifier&fl[]=title&fl[]=creator&rows=12&page=1&output=json';
-        const r = await fetch(url);
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        const j = await r.json();
-        const docs = (j.response && j.response.docs) || [];
-        return docs.map(d => ({
-          key: 'archive:' + d.identifier,
-          title: (typeof d.title === 'string' ? d.title : (d.title && d.title[0])) || d.identifier,
-          artist: (typeof d.creator === 'string' ? d.creator : (d.creator && d.creator[0])) || 'Internet Archive',
-          art: null,
-          stream: null,
-          archiveId: d.identifier
-        }));
-      }
-
-      async function resolveArchive(item) {
-        if (item.stream) return item;
-        const r = await fetch('https://archive.org/metadata/' + encodeURIComponent(item.archiveId));
-        const j = await r.json();
-        const files = j.files || [];
-        const pick = files.find(f => /\.mp3$/i.test(f.name)) || files.find(f => /\.ogg$/i.test(f.name));
-        if (pick) {
-          item.stream = 'https://archive.org/download/' + encodeURIComponent(item.archiveId) + '/' + encodeURIComponent(pick.name);
-        }
-        if (j.metadata) {
-          if (j.metadata.title) item.title = (typeof j.metadata.title === 'string' ? j.metadata.title : j.metadata.title[0]) || item.title;
-          if (j.metadata.creator) item.artist = (typeof j.metadata.creator === 'string' ? j.metadata.creator : (j.metadata.creator && j.metadata.creator[0])) || item.artist;
-        }
-        return item;
-      }
-
-      // ---------- Онлайн-поиск ----------
-      let searchTimer = null;
-
-      searchInput.addEventListener('input', () => {
-        clearTimeout(searchTimer);
-        if (activeTab === 'lib') { render(); return; }
-        searchTimer = setTimeout(runOnlineSearch, 450);
-      });
-
-      async function runOnlineSearch() {
-        const q = (searchInput.value || '').trim();
-        if (q.length < 2) {
-          if (!q) onlineBox.innerHTML = '<div class="online-hint">Легальная музыка с трёх платформ: Audius, Jamendo и Internet Archive. Выберите источник и ищите.</div>';
-          return;
-        }
-        onlineBox.innerHTML = '<div class="status-line">Ищу «' + q + '»...</div>';
-
-        try {
-          let results;
-          if (onlineSource === 'audius') results = await searchAudius(q);
-          else if (onlineSource === 'jamendo') results = await searchJamendo(q);
-          else results = await searchArchive(q);
-
-          if (!results.length) {
-            onlineBox.innerHTML = '<div class="empty">Ничего не нашлось по запросу «' + q + '».<br>Попробуйте другое слово или другой источник.</div>';
-            return;
-          }
-
-          onlineBox.innerHTML = '';
-          results.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'row';
-
-            const cover = document.createElement('div');
-            cover.className = 'cover-art';
-            cover.innerHTML = coverHTML(item.art, item.title, 18);
-
-            const main = document.createElement('div');
-            main.className = 'row-main';
-            main.innerHTML = '<div class="row-title"></div>' + (item.artist ? '<div class="row-artist"></div>' : '');
-            main.querySelector('.row-title').textContent = item.title;
-            if (item.artist) main.querySelector('.row-artist').textContent = item.artist;
-
-            const playB = document.createElement('button');
-            playB.className = 'row-action';
-            playB.innerHTML = ICONS.playSm;
-            playB.addEventListener('click', (e) => { e.stopPropagation(); playOnlineItem(item); });
-
-            const addB = document.createElement('button');
-            addB.className = 'row-action add';
-            addB.innerHTML = ICONS.plus;
-            addB.addEventListener('click', (e) => { e.stopPropagation(); addOnline(item); });
-
-            row.appendChild(cover);
-            row.appendChild(main);
-            row.appendChild(playB);
-            row.appendChild(addB);
-            onlineBox.appendChild(row);
-          });
-        } catch (e) {
-          if (e.message === 'no-key') {
-            onlineBox.innerHTML = '<div class="online-hint">Для Jamendo нужен бесплатный ключ.<br>Получите его на devportal.jamendo.com и вставьте в константу JAMENDO_KEY в коде.<br>Пока переключитесь на Audius или Архив.</div>';
-          } else {
-            onlineBox.innerHTML = '<div class="status-line">Источник недоступен. Попробуйте ещё раз или смените источник.</div>';
-          }
-        }
-      }
-
-      async function playOnlineItem(item) {
-        if (item.archiveId && !item.stream) {
-          onlineBox.innerHTML = '<div class="status-line">Готовлю «' + item.title + '»...</div>';
-          try { item = await resolveArchive(item); } catch (e) {}
-        }
-        if (!item.stream) {
-          onlineBox.innerHTML = '<div class="status-line">У этой записи нет воспроизводимого аудиофайла.</div>';
-          return;
-        }
-        ensureAudioGraph();
-        resumeAudioGraph();
-        lastOnline = item;
-        audio.src = item.stream;
-        audio.playbackRate = curRate;
-        current = -1;
-        const label = item.artist ? item.artist + ' — ' + item.title : item.title;
-        miniTitle.textContent = label;
-        miniCover.innerHTML = coverHTML(item.art, item.title, 15);
-        fpTitle.textContent = item.title;
-        fpArtist.textContent = item.artist || ' ';
-        fpCover.innerHTML = coverHTML(item.art, item.title, 84);
-        miniPlayer.classList.add('active');
-        applyGlow(item.art, item.title);
-        audio.play();
-      }
-
-      async function addOnline(item) {
-        if (item.archiveId && !item.stream) {
-          try { item = await resolveArchive(item); } catch (e) {}
-        }
-        if (!item.stream) {
-          alert('У этой записи нет скачиваемого аудиофайла.');
-          return;
-        }
-        const rec = {
-          id: Date.now() + Math.random(),
-          addedAt: Date.now(),
-          title: item.title,
-          artist: item.artist || '',
-          coverUrl: item.art || null,
-          audiusId: item.audiusId || null,
-          src: item.audiodownload || item.stream
-        };
-        try {
-          const resp = await fetch(rec.src);
-          if (resp.ok) rec.blob = await resp.blob();
-        } catch (e) {}
-        await idbPut(rec);
-        await loadTracks();
-      }
-
-      // ---------- Радио по вайбу ----------
-      async function radioNext() {
-        if (!radioOn) return;
-        const curOnline = (current >= 0 && allTracks[current] && allTracks[current].audiusId)
-          ? allTracks[current]
-          : (current === -1 && lastOnline && lastOnline.audiusId ? lastOnline : null);
-
-        if (curOnline && curOnline.audiusId) {
-          try {
-            const host = await getAudiusHost();
-            const r = await fetch(host + '/v1/tracks/' + curOnline.audiusId + '/similar?app_name=' + APP_NAME);
-            if (r.ok) {
-              const j = await r.json();
-              const list = (j.data || []).filter(x => x && x.id);
-              if (list.length) {
-                const pick = list[Math.floor(Math.random() * list.length)];
-                playOnlineItem({
-                  title: pick.title || 'Без названия',
-                  artist: pick.user ? pick.user.name : '',
-                  art: pick.artwork ? (pick.artwork['150x150'] || pick.artwork['480x480']) : null,
-                  stream: audiusStream(pick.id),
-                  audiusId: pick.id
-                });
-                return;
-              }
-            }
-          } catch (e) {}
-        }
-        if (allTracks.length > 1) playTrack(nextIndex());
-      }
-
       // ---------- Рендер библиотеки ----------
       function render() {
         const q = (searchInput.value || '').trim().toLowerCase();
@@ -1139,7 +779,7 @@
 
         container.innerHTML = '';
         if (allTracks.length === 0) {
-          container.innerHTML = '<div class="empty">Библиотека пуста.<br>Добавьте треки кнопкой выше или найдите на вкладке «Онлайн».</div>';
+          container.innerHTML = '<div class="empty">Библиотека пуста.<br>Добавьте треки кнопкой выше.</div>';
           return;
         }
         if (visible.length === 0) {
@@ -1213,7 +853,7 @@
           })),
           ...localTracks.map(t => ({
             id: t.id, title: t.title, artist: t.artist || '', coverUrl: t.coverUrl || null,
-            blob: t.blob, src: t.src, audiusId: t.audiusId || null, local: true
+            blob: t.blob, src: t.src, local: true
           }))
         ];
         render();
@@ -1251,7 +891,6 @@
 
       function togglePlay() {
         if (current === -1) {
-          if (lastOnline) { playOnlineItem(lastOnline); return; }
           if (allTracks.length) playTrack(0);
           return;
         }
@@ -1277,7 +916,7 @@
         crossOld = oldEl;
         oldEl.volume = 1;
         audio.volume = 0;
-        const steps = 30; // ~3 секунды затухания
+        const steps = 30;
         let i = 0;
         const iv = setInterval(() => {
           i++;
@@ -1296,7 +935,7 @@
       }
 
       function tryCrossfade() {
-        if (!crossOn || crossActive || radioOn) return;
+        if (!crossOn || crossActive) return;
         if (current < 0 || repeatOn || audio.loop) return;
         if (!audio.duration || audio.duration < 12) return;
         if (audio.duration - audio.currentTime > 3) return;
@@ -1308,7 +947,7 @@
         startCrossfade(oldEl);
       }
 
-      // ---------- События обоих аудиоэлементов ----------
+      // ---------- События аудио ----------
       [audioA, audioB].forEach(el => {
         el.addEventListener('play', () => {
           if (el !== audio) return;
@@ -1334,7 +973,6 @@
         el.addEventListener('ended', () => {
           if (el !== audio) return;
           if (audio.loop) return;
-          if (radioOn) { radioNext(); return; }
           if (current >= 0) playTrack(nextIndex());
         });
       });
@@ -1349,12 +987,10 @@
         else if (allTracks.length) playTrack(allTracks.length - 1);
       });
       document.getElementById('nextBtn').addEventListener('click', () => {
-        if (radioOn) { radioNext(); return; }
         if (allTracks.length && current >= 0) playTrack(nextIndex());
       });
       miniNextBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (radioOn) { radioNext(); return; }
         if (allTracks.length && current >= 0) playTrack(nextIndex());
       });
 
@@ -1367,6 +1003,8 @@
 
       function openFull() {
         fullPlayer.classList.add('active');
+        ensureAudioGraph();
+        resumeAudioGraph();
         startViz();
       }
 
@@ -1407,7 +1045,7 @@
 
       // ---------- Добавление файлов ----------
       const fileInput = document.getElementById('fileInput');
-      addBtn.addEventListener('click', () => fileInput.click());
+      document.getElementById('addBtn').addEventListener('click', () => fileInput.click());
 
       fileInput.addEventListener('change', async () => {
         const okExt = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'wav', 'flac', 'opus', 'mp4'];
@@ -1432,7 +1070,7 @@
         await loadTracks();
       });
 
-      // ---------- Экспорт и импорт библиотеки ----------
+      // ---------- Экспорт и импорт ----------
       function blobToBase64(blob) {
         return new Promise((resolve) => {
           const r = new FileReader();
@@ -1449,8 +1087,7 @@
         for (const t of tracks) {
           const item = {
             title: t.title, artist: t.artist || '', coverUrl: t.coverUrl || null,
-            addedAt: t.addedAt || 0, audiusId: t.audiusId || null, src: t.src || null,
-            mime: t.blob ? t.blob.type : null
+            addedAt: t.addedAt || 0, mime: t.blob ? t.blob.type : null
           };
           if (t.blob) item.data = await blobToBase64(t.blob);
           out.push(item);
@@ -1479,9 +1116,7 @@
               addedAt: t.addedAt || Date.now(),
               title: t.title || 'Без названия',
               artist: t.artist || '',
-              coverUrl: t.coverUrl || null,
-              audiusId: t.audiusId || null,
-              src: t.src || null
+              coverUrl: t.coverUrl || null
             };
             if (t.data) {
               const bin = atob(t.data);
@@ -1502,11 +1137,11 @@
 
       // ---------- Шаринг-карточка ----------
       shareBtn.addEventListener('click', async () => {
-        const track = current >= 0 ? allTracks[current] : lastOnline;
+        const track = current >= 0 ? allTracks[current] : null;
         if (!track) return;
 
         const title = track.title || 'Без названия';
-        const artist = (current >= 0 ? track.artist : (lastOnline ? lastOnline.artist : '')) || '';
+        const artist = track.artist || '';
         const time = audio.duration ? fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration) : '';
 
         const c = document.createElement('canvas');
@@ -1520,7 +1155,6 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 720, 960);
 
-        // Обложка
         const coverImg = track.coverUrl ? await new Promise((resolve) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
@@ -1554,7 +1188,6 @@
         }
         ctx.restore();
 
-        // Текст
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ffffff';
         ctx.font = '700 40px -apple-system, Segoe UI, sans-serif';
@@ -1607,7 +1240,6 @@
 
       // ---------- Старт ----------
       loadTracks();
-      setTab('lib');
     })();
   </script>
 </body>
