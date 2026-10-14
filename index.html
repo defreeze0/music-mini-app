@@ -172,7 +172,7 @@
   <p class="subtitle">Выбирай треки и слушай музыку</p>
 
   <button class="add-btn" id="addBtn">＋ Добавить трек</button>
-  <input type="file" id="fileInput" accept="audio/*" multiple />
+  <input type="file" id="fileInput" multiple />
 
   <div id="app" class="cards-container"></div>
 
@@ -359,8 +359,14 @@
     document.getElementById('addBtn').onclick = () => fileInput.click();
 
     fileInput.onchange = async () => {
+      const okExt = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'wav', 'flac', 'opus', 'mp4'];
       for (const file of fileInput.files) {
-        if (!file.type.startsWith('audio/')) continue;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        const isAudio = file.type.startsWith('audio/') || okExt.includes(ext);
+        if (!isAudio) {
+          alert('Файл «' + file.name + '» не похож на аудио — пропускаю.');
+          continue;
+        }
         const track = {
           id: Date.now() + Math.random(),
           title: file.name.replace(/\.[^.]+$/, ''), // имя файла без расширения
@@ -376,5 +382,5 @@
     // Старт
     loadTracks();
   </script>
-</head>
+</body>
 </html>
