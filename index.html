@@ -32,11 +32,9 @@
 
     .wrap { max-width: 560px; margin: 0 auto; padding: 28px 20px 0 20px; }
 
-    /* ---------- Шапка ---------- */
     h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.6px; }
     .sub { margin: 4px 0 0 0; color: var(--hint); font-size: 13.5px; }
 
-    /* ---------- Поиск ---------- */
     .search-box { margin-top: 22px; position: relative; }
     .search-box svg {
       position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
@@ -57,7 +55,6 @@
     .search-input:focus { border-color: rgba(255, 255, 255, 0.18); }
     .search-input::placeholder { color: var(--hint); }
 
-    /* ---------- Кнопка добавить ---------- */
     .add-btn {
       margin-top: 14px;
       width: 100%;
@@ -75,7 +72,6 @@
     }
     .add-btn:active { transform: scale(0.98); opacity: 0.85; }
 
-    /* ---------- Список треков ---------- */
     .list { margin-top: 10px; }
 
     .row {
@@ -164,8 +160,8 @@
       background: var(--surface);
       border: 1px solid var(--stroke);
       border-radius: 16px;
-      padding: 10px 12px;
-      display: flex; align-items: center; gap: 12px;
+      padding: 10px 10px;
+      display: flex; align-items: center; gap: 6px;
       z-index: 90;
       opacity: 0; visibility: hidden; transform: translateY(20px);
       transition: all 0.25s ease;
@@ -208,6 +204,11 @@
     }
     .icon-btn:active { background: rgba(255,255,255,0.08); }
     .icon-btn.accented { color: var(--accent); }
+
+    .icon-btn.sm {
+      width: 30px; height: 30px;
+    }
+    .icon-btn.sm svg { width: 16px; height: 16px; }
 
     .play-round {
       width: 40px; height: 40px;
@@ -307,13 +308,19 @@
   <!-- Мини-плеер -->
   <div class="mini-player" id="miniPlayer">
     <div class="mini-cover" id="miniCover"></div>
-    <div class="mini-main">
+    <div class="mini-main" id="miniMain">
       <div class="mini-title" id="miniTitle">—</div>
       <div class="mini-bar"><div class="mini-fill" id="miniFill"></div></div>
     </div>
-    <button class="icon-btn" id="miniPlayBtn"></button>
-    <button class="icon-btn" id="miniNextBtn">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
+    <button class="icon-btn sm shuffle-toggle" title="Перемешать">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+    </button>
+    <button class="play-round" id="miniPlayBtn"></button>
+    <button class="icon-btn sm repeat-toggle" title="Повтор">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+    </button>
+    <button class="icon-btn sm" id="miniNextBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
     </button>
   </div>
 
@@ -343,7 +350,7 @@
       </div>
 
       <div class="fp-controls">
-        <button class="icon-btn side" id="shuffleBtn">
+        <button class="icon-btn side shuffle-toggle">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
         </button>
         <button class="icon-btn side" id="prevBtn">
@@ -353,7 +360,7 @@
         <button class="icon-btn side" id="nextBtn">
           <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
         </button>
-        <button class="icon-btn side" id="repeatBtn">
+        <button class="icon-btn side repeat-toggle">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
         </button>
       </div>
@@ -380,9 +387,9 @@
 
       const ICONS = {
         play: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
-        playSm: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+        playSm: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
         pause: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
-        pauseSm: '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+        pauseSm: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
         trash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"/></svg>'
       };
 
@@ -406,8 +413,10 @@
       const fpCur = document.getElementById('fpCur');
       const fpDur = document.getElementById('fpDur');
       const playPauseBtn = document.getElementById('playPauseBtn');
-      const shuffleBtn = document.getElementById('shuffleBtn');
-      const repeatBtn = document.getElementById('repeatBtn');
+
+      // Кнопки режимов: и в мини-плеере, и на полном экране — работают синхронно
+      const shuffleBtns = document.querySelectorAll('.shuffle-toggle');
+      const repeatBtns = document.querySelectorAll('.repeat-toggle');
 
       let allTracks = [];
       let current = -1;
@@ -418,22 +427,24 @@
       updateModeButtons();
 
       function updateModeButtons() {
-        shuffleBtn.classList.toggle('accented', shuffleOn);
-        repeatBtn.classList.toggle('accented', repeatOn);
+        shuffleBtns.forEach(b => b.classList.toggle('accented', shuffleOn));
+        repeatBtns.forEach(b => b.classList.toggle('accented', repeatOn));
       }
 
-      shuffleBtn.addEventListener('click', () => {
+      shuffleBtns.forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         shuffleOn = !shuffleOn;
         storage.set('shuffleOn', shuffleOn ? '1' : '0');
         updateModeButtons();
-      });
+      }));
 
-      repeatBtn.addEventListener('click', () => {
+      repeatBtns.forEach(btn => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         repeatOn = !repeatOn;
         storage.set('repeatOn', repeatOn ? '1' : '0');
         audio.loop = repeatOn;
         updateModeButtons();
-      });
+      }));
 
       // ---------- IndexedDB ----------
       function openDB() {
@@ -485,7 +496,7 @@
         return 'data:' + (pic.format || 'image/jpeg') + ';base64,' + btoa(binary);
       }
 
-      // ---------- Обложка: картинка или тёмная плитка с буквой ----------
+      // ---------- Обложка ----------
       function hashCode(str) {
         let h = 0;
         for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
@@ -671,7 +682,6 @@
         if (allTracks.length) playTrack(nextIndex());
       });
 
-      // Перемотка (клик по любому плееру)
       function seekFromEvent(e, el) {
         if (!audio.duration) return;
         const rect = el.getBoundingClientRect();
@@ -679,7 +689,6 @@
       }
       fpTrackBar.addEventListener('click', (e) => seekFromEvent(e, fpTrackBar));
 
-      // Полноэкранный плеер
       miniPlayer.addEventListener('click', () => fullPlayer.classList.add('active'));
       document.getElementById('fpCloseBtn').addEventListener('click', () => fullPlayer.classList.remove('active'));
 
@@ -710,10 +719,8 @@
         await loadTracks();
       });
 
-      // ---------- Поиск ----------
       searchInput.addEventListener('input', render);
 
-      // ---------- Старт ----------
       loadTracks();
     })();
   </script>
