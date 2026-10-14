@@ -8,15 +8,19 @@
   <script src="https://cdn.jsdelivr.net/npm/jsmediatags@3.9.5/dist/jsmediatags.min.js"></script>
   <style>
     :root {
-      --bg: var(--tg-theme-bg-color, #0b0b0d);
-      --surface: var(--tg-theme-secondary-bg-color, #161618);
-      --text: var(--tg-theme-text-color, #f5f5f7);
-      --hint: var(--tg-theme-hint-color, #7c7c82);
-      --accent: var(--tg-theme-button-color, #4f8cff);
-      --on-accent: var(--tg-theme-button-text-color, #ffffff);
+      /* Фирменная палитра — жёстко задана, Telegram её не перебивает */
+      --bg: #080C0A;
+      --surface: #111714;
+      --divider: #272D29;
+      --accent: #69445F;
+      --text: #DCD9D2;
+      --hint: #858983;
+      /* Светлая версия акцента для текста и иконок на тёмном фоне */
+      --accent-bright: #C99BB4;
+      --on-accent: #FFFFFF;
       --stroke: rgba(255, 255, 255, 0.06);
-      --glow: rgba(80, 120, 255, 0);
-      --glow-soft: rgba(80, 120, 255, 0);
+      --glow: rgba(105, 68, 95, 0.35);
+      --glow-soft: rgba(105, 68, 95, 0.45);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -45,7 +49,7 @@
     .search-input {
       width: 100%;
       background: var(--surface);
-      border: 1px solid var(--stroke);
+      border: 1px solid var(--divider);
       border-radius: 12px;
       padding: 12px 14px 12px 42px;
       color: var(--text);
@@ -54,7 +58,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .search-input:focus { border-color: rgba(255, 255, 255, 0.18); }
+    .search-input:focus { border-color: var(--accent); }
     .search-input::placeholder { color: var(--hint); }
 
     .add-btn {
@@ -80,7 +84,7 @@
       padding: 10px;
       border-radius: 10px;
       background: transparent;
-      border: 1px solid var(--stroke);
+      border: 1px solid var(--divider);
       color: var(--hint);
       font-family: inherit;
       font-size: 13px;
@@ -88,7 +92,7 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .tool-btn:active { color: var(--text); }
+    .tool-btn:active { color: var(--text); border-color: var(--accent); }
 
     .list { margin-top: 10px; }
 
@@ -102,7 +106,7 @@
     }
     .row:hover { background: var(--surface); }
     .row:active { background: var(--surface); }
-    .row.playing .row-title { color: var(--accent); }
+    .row.playing .row-title { color: var(--accent-bright); }
 
     .cover-art {
       width: 52px; height: 52px;
@@ -138,7 +142,7 @@
     }
     .row.playing .eq { display: flex; }
     .eq span {
-      width: 3px; background: var(--accent); border-radius: 1px;
+      width: 3px; background: var(--accent-bright); border-radius: 1px;
       animation: eq 0.9s ease-in-out infinite;
     }
     .eq span:nth-child(1) { height: 55%; animation-delay: 0s; }
@@ -168,7 +172,7 @@
       font-size: 13.5px;
       text-align: center;
       padding: 40px 20px;
-      border: 1px dashed var(--stroke);
+      border: 1px dashed var(--divider);
       border-radius: 16px;
       line-height: 1.6;
     }
@@ -178,7 +182,7 @@
       position: fixed;
       left: 12px; right: 12px; bottom: 12px;
       background: var(--surface);
-      border: 1px solid var(--stroke);
+      border: 1px solid var(--divider);
       border-radius: 16px;
       padding: 10px 10px;
       display: flex; align-items: center; gap: 6px;
@@ -210,7 +214,7 @@
       background: rgba(255, 255, 255, 0.12);
       border-radius: 2px; overflow: hidden;
     }
-    .mini-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 2px; }
+    .mini-fill { height: 100%; width: 0%; background: var(--accent-bright); border-radius: 2px; }
 
     .icon-btn {
       width: 38px; height: 38px;
@@ -224,7 +228,7 @@
       transition: color 0.2s, background 0.2s;
     }
     .icon-btn:active { background: rgba(255,255,255,0.08); }
-    .icon-btn.accented { color: var(--accent); }
+    .icon-btn.accented { color: var(--accent-bright); }
 
     .icon-btn.sm { width: 30px; height: 30px; }
     .icon-btn.sm svg { width: 16px; height: 16px; }
@@ -272,7 +276,7 @@
     .fp-label { color: var(--hint); font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
     .speed-btn {
       background: transparent;
-      border: 1px solid var(--stroke);
+      border: 1px solid var(--divider);
       color: var(--hint);
       font-family: inherit;
       font-size: 12px;
@@ -282,7 +286,7 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .speed-btn.accented { color: var(--accent); border-color: rgba(255,255,255,0.15); }
+    .speed-btn.accented { color: var(--accent-bright); border-color: var(--accent); }
 
     .fp-cover {
       width: min(72vw, 280px);
@@ -306,7 +310,7 @@
     .fp-progress { margin-top: 20px; }
     .fp-track { height: 20px; display: flex; align-items: center; cursor: pointer; }
     .fp-line { height: 5px; width: 100%; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
-    .fp-line-fill { height: 100%; width: 0%; background: var(--text); border-radius: 3px; }
+    .fp-line-fill { height: 100%; width: 0%; background: var(--accent-bright); border-radius: 3px; }
     .fp-times {
       display: flex; justify-content: space-between;
       font-size: 11.5px; color: var(--hint); margin-top: 2px;
@@ -438,7 +442,6 @@
 
   <audio id="mainAudio"></audio>
   <audio id="shadowAudio"></audio>
-
   <script>
     (function () {
       const tg = window.Telegram.WebApp;
@@ -616,7 +619,9 @@
       }
 
       // ---------- Подсветка под цвет обложки ----------
-      let glowColor = [79, 140, 255];
+      // Дефолт — светлая версия сливового акцента (#C99BB4), чтобы
+      // визуализатор и свечение были видны на почти чёрном фоне
+      let glowColor = [201, 155, 180];
 
       function applyGlow(coverUrl, title) {
         if (coverUrl) {
@@ -650,7 +655,9 @@
                 if (d[i + 3] > 128) { r += d[i]; g += d[i + 1]; b += d[i + 2]; n++; }
               }
               if (!n) { resolve(null); return; }
-              resolve({ r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) });
+              // Осветляем средний цвет, чтобы свечение читалось на тёмном фоне
+              const lift = (v) => Math.round(v + (235 - v) * 0.35);
+              resolve({ r: lift(Math.round(r / n)), g: lift(Math.round(g / n)), b: lift(Math.round(b / n)) });
             } catch (e) { resolve(null); }
           };
           img.onerror = () => resolve(null);
@@ -1151,7 +1158,7 @@
         const [r, g, b] = glowColor;
         const grad = ctx.createLinearGradient(0, 0, 0, 960);
         grad.addColorStop(0, 'rgb(' + Math.min(255, r + 25) + ',' + Math.min(255, g + 25) + ',' + Math.min(255, b + 25) + ')');
-        grad.addColorStop(1, 'rgb(15,15,18)');
+        grad.addColorStop(1, 'rgb(8, 12, 10)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 720, 960);
 
@@ -1189,7 +1196,7 @@
         ctx.restore();
 
         ctx.textAlign = 'left';
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#DCD9D2';
         ctx.font = '700 40px -apple-system, Segoe UI, sans-serif';
         const lines = [];
         let line = '';
@@ -1203,17 +1210,17 @@
         lines.slice(0, 2).forEach(l => { ctx.fillText(l, 60, ty); ty += 50; });
 
         if (artist) {
-          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          ctx.fillStyle = 'rgba(220, 217, 210, 0.6)';
           ctx.font = '400 28px -apple-system, Segoe UI, sans-serif';
           ctx.fillText(artist, 60, ty + 12);
         }
         if (time) {
-          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.fillStyle = 'rgba(220, 217, 210, 0.45)';
           ctx.font = '600 24px -apple-system, Segoe UI, sans-serif';
           ctx.fillText(time, 60, 900);
         }
         ctx.textAlign = 'right';
-        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.fillStyle = 'rgba(201, 155, 180, 0.55)';
         ctx.font = '600 22px -apple-system, Segoe UI, sans-serif';
         ctx.fillText('Music Mini App', 660, 900);
 
