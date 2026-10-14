@@ -73,6 +73,23 @@
     }
     .tab.active { background: var(--surface); color: var(--text); border-color: transparent; }
 
+    .chips { display: none; gap: 8px; margin-top: 10px; overflow-x: auto; }
+    .chips.visible { display: flex; }
+    .chip {
+      padding: 7px 14px;
+      border-radius: 20px;
+      background: transparent;
+      border: 1px solid var(--stroke);
+      color: var(--hint);
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .chip.active { background: var(--surface); color: var(--text); border-color: transparent; }
+
     .add-btn {
       margin-top: 14px;
       width: 100%;
@@ -90,6 +107,23 @@
     }
     .add-btn.visible { display: flex; }
     .add-btn:active { transform: scale(0.98); opacity: 0.85; }
+
+    .lib-tools { display: none; gap: 8px; margin-top: 10px; }
+    .lib-tools.visible { display: flex; }
+    .tool-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      background: transparent;
+      border: 1px solid var(--stroke);
+      color: var(--hint);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tool-btn:active { color: var(--text); }
 
     .list { margin-top: 10px; }
     .online-hint {
@@ -204,6 +238,7 @@
       transition: all 0.25s ease, box-shadow 0.6s ease;
       box-shadow: 0 10px 30px var(--glow-soft, rgba(0, 0, 0, 0.4));
       cursor: pointer;
+      touch-action: pan-y;
     }
     .mini-player.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
@@ -269,25 +304,51 @@
       padding: 20px 24px calc(28px + env(safe-area-inset-bottom)) 24px;
       opacity: 0; visibility: hidden; transform: translateY(30px);
       transition: all 0.28s ease, background 0.6s ease;
+      overflow: hidden;
     }
     .full-player.active { opacity: 1; visibility: visible; transform: translateY(0); }
 
+    #vizCanvas {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .full-player.active #vizCanvas { opacity: 1; }
+    .full-player > *:not(#vizCanvas) { position: relative; z-index: 1; }
+
     .fp-top { display: flex; align-items: center; justify-content: space-between; }
     .fp-label { color: var(--hint); font-size: 12px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; }
+    .speed-btn {
+      background: transparent;
+      border: 1px solid var(--stroke);
+      color: var(--hint);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .speed-btn.accented { color: var(--accent); border-color: rgba(255,255,255,0.15); }
 
     .fp-cover {
       width: min(72vw, 280px);
       aspect-ratio: 1;
       border-radius: 20px;
-      margin: 8vh auto 0 auto;
+      margin: 7vh auto 0 auto;
       overflow: hidden;
       display: flex; align-items: center; justify-content: center;
       box-shadow: 0 20px 60px var(--glow-soft, rgba(0, 0, 0, 0.5));
       flex-shrink: 0;
       transition: box-shadow 0.6s ease;
+      position: relative;
     }
     .fp-cover img { width: 100%; height: 100%; object-fit: cover; }
-    .fp-cover .letter { font-size: 84px; font-weight: 700; color: rgba(255,255,255,0.5); }
+    .fp-cover .letter { font-size: 84px; font-weight: 700; color: rgba(255,255,255,0.5); width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
 
     .fp-meta { margin-top: auto; }
     .fp-title { font-size: 20px; font-weight: 700; line-height: 1.3; }
@@ -305,9 +366,9 @@
 
     .fp-controls {
       display: flex; align-items: center; justify-content: space-between;
-      margin-top: 18px;
+      margin-top: 16px;
     }
-    .fp-controls .side { width: 40px; }
+    .fp-controls .group { display: flex; gap: 4px; }
     .fp-play {
       width: 58px; height: 58px;
       border-radius: 50%;
@@ -321,10 +382,11 @@
     .fp-play:active { transform: scale(0.94); }
 
     .radio-badge {
-      position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
       display: none; align-items: center; gap: 6px;
       color: var(--accent);
       font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+      z-index: 1;
     }
     .radio-badge.on { display: flex; }
     .radio-badge .dot {
@@ -334,8 +396,8 @@
     }
     @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
-    #mainAudio { display: none; }
-    #fileInput { display: none; }
+    #mainAudio, #shadowAudio { display: none; }
+    #fileInput, #importInput { display: none; }
   </style>
 </head>
 <body>
@@ -353,11 +415,24 @@
       <button class="tab" id="tabOnline">Онлайн</button>
     </div>
 
-    <button class="add-btn" id="addBtn">
+    <div class="chips" id="chips">
+      <button class="chip active" data-src="audius">Audius</button>
+      <button class="chip" data-src="jamendo">Jamendo</button>
+      <button class="chip" data-src="archive">Архив</button>
+    </div>
+
+    <button class="add-btn visible" id="addBtn">
       <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
       Добавить трек
     </button>
+
+    <div class="lib-tools visible" id="libTools">
+      <button class="tool-btn" id="exportBtn">Экспорт библиотеки</button>
+      <button class="tool-btn" id="importBtn">Импорт</button>
+    </div>
+
     <input type="file" id="fileInput" multiple />
+    <input type="file" id="importInput" accept=".json,application/json" />
 
     <div id="app" class="list"></div>
     <div id="onlineBox" class="list" style="display:none;"></div>
@@ -384,8 +459,13 @@
 
   <!-- Полноэкранный плеер -->
   <div class="full-player" id="fullPlayer">
+    <canvas id="vizCanvas"></canvas>
     <div class="fp-top">
       <span class="fp-label">Сейчас играет</span>
+      <button class="speed-btn" id="speedBtn">1×</button>
+      <button class="icon-btn" id="shareBtn" title="Поделиться">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+      </button>
       <button class="icon-btn" id="fpCloseBtn">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
       </button>
@@ -410,27 +490,37 @@
       </div>
 
       <div class="fp-controls">
-        <button class="icon-btn side shuffle-toggle">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
-        </button>
-        <button class="icon-btn side" id="prevBtn">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 6h2v12H6zM18 6v12l-8.5-6z"/></svg>
-        </button>
-        <button class="fp-play" id="playPauseBtn"></button>
-        <button class="icon-btn side" id="nextBtn">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
-        </button>
-        <button class="icon-btn side repeat-toggle">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-        </button>
-        <button class="icon-btn side" id="radioBtn" title="Радио по вайбу">
-          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm-3.54 3.54-1.41-1.41a7 7 0 0 1 0-9.9l1.41 1.42a5 5 0 0 0 0 7.07zm7.08 0 1.41-1.41a7 7 0 0 0 0-9.9l-1.41 1.42a5 5 0 0 1 0 7.07z"/></svg>
-        </button>
+        <div class="group">
+          <button class="icon-btn shuffle-toggle" id="shuffleBtn">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M10.59 9.17 5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+          </button>
+          <button class="icon-btn cross-toggle" id="crossBtn" title="Кроссфейд">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M3 7h13.2l-2.6-2.6L15 3l5 5-5 5-1.4-1.4L16.2 9H3V7zm18 10H7.8l2.6 2.6L9 21l-5-5 5-5 1.4 1.4L7.8 15H21v2z"/></svg>
+          </button>
+        </div>
+        <div class="group">
+          <button class="icon-btn" id="prevBtn">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 6h2v12H6zM18 6v12l-8.5-6z"/></svg>
+          </button>
+          <button class="fp-play" id="playPauseBtn"></button>
+          <button class="icon-btn" id="nextBtn">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
+          </button>
+        </div>
+        <div class="group">
+          <button class="icon-btn repeat-toggle" id="repeatBtn">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          </button>
+          <button class="icon-btn" id="radioBtn" title="Радио по вайбу">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor"><path d="M12 14a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm-3.54 3.54-1.41-1.41a7 7 0 0 1 0-9.9l1.41 1.42a5 5 0 0 0 0 7.07zm7.08 0 1.41-1.41a7 7 0 0 0 0-9.9l-1.41 1.42a5 5 0 0 1 0 7.07z"/></svg>
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <audio id="mainAudio"></audio>
+  <audio id="shadowAudio"></audio>
 
   <script>
     (function () {
@@ -454,17 +544,24 @@
         pause: '<svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
         pauseSm: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
         trash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2h4v2H4V6h4l1-2z"/></svg>',
-        plus: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>',
-        ok: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>'
+        plus: '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>'
       };
 
-      const audio = document.getElementById('mainAudio');
+      const JAMENDO_KEY = '';
+
+      const audioA = document.getElementById('mainAudio');
+      const audioB = document.getElementById('shadowAudio');
+      let audio = audioA; // активный элемент; при кроссфейде роли меняются
+
       const container = document.getElementById('app');
       const onlineBox = document.getElementById('onlineBox');
       const searchInput = document.getElementById('searchInput');
       const tabLib = document.getElementById('tabLib');
       const tabOnline = document.getElementById('tabOnline');
+      const chips = document.getElementById('chips');
       const addBtn = document.getElementById('addBtn');
+      const libTools = document.getElementById('libTools');
+      const importInput = document.getElementById('importInput');
 
       const miniPlayer = document.getElementById('miniPlayer');
       const miniCover = document.getElementById('miniCover');
@@ -484,6 +581,10 @@
       const playPauseBtn = document.getElementById('playPauseBtn');
       const radioBtn = document.getElementById('radioBtn');
       const radioBadge = document.getElementById('radioBadge');
+      const speedBtn = document.getElementById('speedBtn');
+      const crossBtn = document.getElementById('crossBtn');
+      const shareBtn = document.getElementById('shareBtn');
+      const vizCanvas = document.getElementById('vizCanvas');
 
       const shuffleBtns = document.querySelectorAll('.shuffle-toggle');
       const repeatBtns = document.querySelectorAll('.repeat-toggle');
@@ -491,20 +592,32 @@
       let allTracks = [];
       let current = -1;
       let activeTab = 'lib';
-      let lastOnline = null; // последний онлайн-трек для радио
+      let onlineSource = 'audius';
+      let lastOnline = null;
 
       let shuffleOn = storage.get('shuffleOn') === '1';
       let repeatOn = storage.get('repeatOn') === '1';
+      let crossOn = storage.get('crossOn') !== '0';
       let radioOn = false;
-      audio.loop = repeatOn;
+      audioA.loop = repeatOn;
+      let curRate = parseFloat(storage.get('rate') || '1') || 1;
       updateModeButtons();
 
       function updateModeButtons() {
         shuffleBtns.forEach(b => b.classList.toggle('accented', shuffleOn));
         repeatBtns.forEach(b => b.classList.toggle('accented', repeatOn));
+        crossBtn.classList.toggle('accented', crossOn);
         radioBtn.classList.toggle('accented', radioOn);
         radioBadge.classList.toggle('on', radioOn);
+        speedBtn.classList.toggle('accented', curRate !== 1);
+        speedBtn.textContent = (curRate + '').replace('0.75', '¾').replace('.', ',') + '×';
       }
+
+      function applyRate() {
+        audioA.playbackRate = curRate;
+        audioB.playbackRate = curRate;
+      }
+      applyRate();
 
       shuffleBtns.forEach(btn => btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -517,17 +630,30 @@
         e.stopPropagation();
         repeatOn = !repeatOn;
         storage.set('repeatOn', repeatOn ? '1' : '0');
-        audio.loop = repeatOn;
+        audioA.loop = repeatOn;
+        audioB.loop = repeatOn;
         updateModeButtons();
       }));
+
+      crossBtn.addEventListener('click', () => {
+        crossOn = !crossOn;
+        storage.set('crossOn', crossOn ? '1' : '0');
+        updateModeButtons();
+      });
+
+      const RATES = [0.75, 1, 1.25, 1.5, 2];
+      speedBtn.addEventListener('click', () => {
+        const idx = RATES.indexOf(curRate);
+        curRate = RATES[(idx + 1) % RATES.length];
+        storage.set('rate', curRate);
+        applyRate();
+        updateModeButtons();
+      });
 
       radioBtn.addEventListener('click', () => {
         radioOn = !radioOn;
         updateModeButtons();
-        if (radioOn && current === -1 && lastOnline) {
-          // включили радио, когда ничего не играет — стартуем с последнего онлайн-трека
-          playOnlineTrack(lastOnline, true);
-        }
+        if (radioOn && current === -1 && lastOnline) playOnlineItem(lastOnline);
       });
 
       // ---------- IndexedDB ----------
@@ -596,19 +722,20 @@
       }
 
       // ---------- Подсветка под цвет обложки ----------
-      function applyGlow(track) {
-        if (track && track.coverUrl) {
-          extractColor(track.coverUrl).then(rgb => {
-            if (rgb) setGlow(rgb.r, rgb.g, rgb.b);
-          });
+      let glowColor = [79, 140, 255];
+
+      function applyGlow(coverUrl, title) {
+        if (coverUrl) {
+          extractColor(coverUrl).then(rgb => { if (rgb) setGlow(rgb.r, rgb.g, rgb.b); });
         } else {
-          const h = hashCode((track && track.title) || 'track') % 360;
+          const h = hashCode(title || 'track') % 360;
           const rgb = hslToRgb(h / 360, 0.35, 0.35);
           setGlow(rgb.r, rgb.g, rgb.b);
         }
       }
 
       function setGlow(r, g, b) {
+        glowColor = [r, g, b];
         document.documentElement.style.setProperty('--glow', 'rgba(' + r + ',' + g + ',' + b + ',0.35)');
         document.documentElement.style.setProperty('--glow-soft', 'rgba(' + r + ',' + g + ',' + b + ',0.45)');
       }
@@ -646,23 +773,136 @@
         return { r: f(0), g: f(8), b: f(4) };
       }
 
-      // ---------- Табы ----------
+      // ---------- Веб-аудио: граф для визуализатора ----------
+      let actx = null, analyser = null, dataArr = null;
+
+      function ensureAudioGraph() {
+        if (actx || !window.AudioContext && !window.webkitAudioContext) return;
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          actx = new Ctx();
+          analyser = actx.createAnalyser();
+          analyser.fftSize = 64;
+          analyser.smoothingTimeConstant = 0.82;
+          const srcA = actx.createMediaElementSource(audioA);
+          const srcB = actx.createMediaElementSource(audioB);
+          srcA.connect(analyser);
+          srcB.connect(analyser);
+          analyser.connect(actx.destination);
+          dataArr = new Uint8Array(analyser.frequencyBinCount);
+        } catch (e) {
+          actx = null; analyser = null; // звук играет как обычно, визуализатор уйдёт в симуляцию
+        }
+      }
+
+      function resumeAudioGraph() {
+        if (actx && actx.state === 'suspended') actx.resume();
+      }
+
+      // ---------- Визуализатор ----------
+      let rafId = null;
+
+      function startViz() {
+        stopViz();
+        const loop = () => {
+          rafId = requestAnimationFrame(loop);
+          drawViz();
+        };
+        rafId = requestAnimationFrame(loop);
+      }
+
+      function stopViz() {
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      }
+
+      function drawViz() {
+        if (!fullPlayer.classList.contains('active')) { stopViz(); return; }
+
+        const dpr = window.devicePixelRatio || 1;
+        const w = vizCanvas.clientWidth, h = vizCanvas.clientHeight;
+        if (vizCanvas.width !== w * dpr || vizCanvas.height !== h * dpr) {
+          vizCanvas.width = w * dpr;
+          vizCanvas.height = h * dpr;
+        }
+        const ctx = vizCanvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, w, h);
+
+        const rect = fpCover.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2 - vizCanvas.getBoundingClientRect().left;
+        const cy = rect.top + rect.height / 2 - vizCanvas.getBoundingClientRect().top;
+        const r0 = rect.width / 2 + 14;
+
+        const playing = !audio.paused && !audio.ended;
+        const N = 56;
+        const bars = new Array(N).fill(0);
+
+        if (analyser && dataArr) {
+          analyser.getByteFrequencyData(dataArr);
+          let allZero = true;
+          for (let i = 0; i < dataArr.length; i++) if (dataArr[i] > 2) { allZero = false; break; }
+          if (!allZero) {
+            for (let i = 0; i < N; i++) {
+              const bin = Math.floor(i / N * dataArr.length);
+              bars[i] = dataArr[bin] / 255;
+            }
+          } else if (playing) {
+            const t = performance.now();
+            for (let i = 0; i < N; i++) {
+              bars[i] = (Math.sin(t / 260 + i * 0.55) * 0.5 + 0.5) * 0.55;
+            }
+          }
+        } else if (playing) {
+          const t = performance.now();
+          for (let i = 0; i < N; i++) {
+            bars[i] = (Math.sin(t / 260 + i * 0.55) * 0.5 + 0.5) * 0.55;
+          }
+        }
+
+        const [r, g, b] = glowColor;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < N; i++) {
+          const ang = (i / N) * Math.PI * 2 - Math.PI / 2;
+          const len = 4 + bars[i] * 42;
+          const x1 = cx + Math.cos(ang) * r0;
+          const y1 = cy + Math.sin(ang) * r0;
+          const x2 = cx + Math.cos(ang) * (r0 + len);
+          const y2 = cy + Math.sin(ang) * (r0 + len);
+          ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + (0.25 + bars[i] * 0.75) + ')';
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+      }
+
+      // ---------- Табы и источники ----------
       function setTab(tab) {
         activeTab = tab;
         tabLib.classList.toggle('active', tab === 'lib');
         tabOnline.classList.toggle('active', tab === 'online');
+        chips.classList.toggle('visible', tab === 'online');
         container.style.display = tab === 'lib' ? '' : 'none';
         onlineBox.style.display = tab === 'online' ? '' : 'none';
         addBtn.classList.toggle('visible', tab === 'lib');
-        if (tab === 'online') searchInput.placeholder = 'Поиск музыки онлайн';
-        else searchInput.placeholder = 'Поиск по трекам';
+        libTools.classList.toggle('visible', tab === 'lib');
+        searchInput.placeholder = tab === 'online' ? 'Поиск музыки онлайн' : 'Поиск по трекам';
         if (tab === 'online') runOnlineSearch();
       }
 
       tabLib.addEventListener('click', () => setTab('lib'));
       tabOnline.addEventListener('click', () => setTab('online'));
 
-      // ---------- Audius ----------
+      chips.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          onlineSource = chip.dataset.src;
+          chips.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === chip));
+          runOnlineSearch();
+        });
+      });
+
+      // ---------- Источники ----------
       const APP_NAME = 'music-mini-app';
       let audiusHost = null;
 
@@ -674,10 +914,75 @@
         return audiusHost;
       }
 
-      function streamUrl(id) {
+      function audiusStream(id) {
         return (audiusHost || 'https://discoveryprovider.audius.co') + '/v1/tracks/' + id + '/stream?app_name=' + APP_NAME;
       }
 
+      async function searchAudius(q) {
+        const host = await getAudiusHost();
+        const r = await fetch(host + '/v1/tracks/search?query=' + encodeURIComponent(q) + '&app_name=' + APP_NAME);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        return (j.data || []).slice(0, 15).map(t => ({
+          key: 'audius:' + t.id,
+          title: t.title || 'Без названия',
+          artist: t.user ? t.user.name : '',
+          art: t.artwork ? (t.artwork['150x150'] || t.artwork['480x480']) : null,
+          stream: audiusStream(t.id),
+          audiusId: t.id
+        }));
+      }
+
+      async function searchJamendo(q) {
+        if (!JAMENDO_KEY) throw new Error('no-key');
+        const r = await fetch('https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_KEY +
+          '&format=json&limit=15&search=' + encodeURIComponent(q));
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        return (j.results || []).map(t => ({
+          key: 'jamendo:' + t.id,
+          title: t.name || 'Без названия',
+          artist: t.artist_name || '',
+          art: t.image || t.album_image || null,
+          stream: t.audio || t.audiodownload,
+          audiodownload: t.audiodownload_allowed !== false ? t.audiodownload : null
+        }));
+      }
+
+      async function searchArchive(q) {
+        const url = 'https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q + ' AND mediatype:audio') +
+          '&fl[]=identifier&fl[]=title&fl[]=creator&rows=12&page=1&output=json';
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        const docs = (j.response && j.response.docs) || [];
+        return docs.map(d => ({
+          key: 'archive:' + d.identifier,
+          title: (typeof d.title === 'string' ? d.title : (d.title && d.title[0])) || d.identifier,
+          artist: (typeof d.creator === 'string' ? d.creator : (d.creator && d.creator[0])) || 'Internet Archive',
+          art: null,
+          stream: null,
+          archiveId: d.identifier
+        }));
+      }
+
+      async function resolveArchive(item) {
+        if (item.stream) return item;
+        const r = await fetch('https://archive.org/metadata/' + encodeURIComponent(item.archiveId));
+        const j = await r.json();
+        const files = j.files || [];
+        const pick = files.find(f => /\.mp3$/i.test(f.name)) || files.find(f => /\.ogg$/i.test(f.name));
+        if (pick) {
+          item.stream = 'https://archive.org/download/' + encodeURIComponent(item.archiveId) + '/' + encodeURIComponent(pick.name);
+        }
+        if (j.metadata) {
+          if (j.metadata.title) item.title = (typeof j.metadata.title === 'string' ? j.metadata.title : j.metadata.title[0]) || item.title;
+          if (j.metadata.creator) item.artist = (typeof j.metadata.creator === 'string' ? j.metadata.creator : (j.metadata.creator && j.metadata.creator[0])) || item.artist;
+        }
+        return item;
+      }
+
+      // ---------- Онлайн-поиск ----------
       let searchTimer = null;
 
       searchInput.addEventListener('input', () => {
@@ -689,54 +994,46 @@
       async function runOnlineSearch() {
         const q = (searchInput.value || '').trim();
         if (q.length < 2) {
-          if (!q) onlineBox.innerHTML = '<div class="online-hint">Полноценные треки от независимых артистов через открытую платформу Audius.<br>Ищите, слушайте и добавляйте в библиотеку.</div>';
+          if (!q) onlineBox.innerHTML = '<div class="online-hint">Легальная музыка с трёх платформ: Audius, Jamendo и Internet Archive. Выберите источник и ищите.</div>';
           return;
         }
         onlineBox.innerHTML = '<div class="status-line">Ищу «' + q + '»...</div>';
 
         try {
-          const host = await getAudiusHost();
-          const r = await fetch(host + '/v1/tracks/search?query=' + encodeURIComponent(q) + '&app_name=' + APP_NAME);
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          const j = await r.json();
-          const results = (j.data || []).slice(0, 15);
+          let results;
+          if (onlineSource === 'audius') results = await searchAudius(q);
+          else if (onlineSource === 'jamendo') results = await searchJamendo(q);
+          else results = await searchArchive(q);
 
-          if (results.length === 0) {
-            onlineBox.innerHTML = '<div class="empty">Ничего не нашлось по запросу «' + q + '».<br>Попробуйте другое слово.</div>';
+          if (!results.length) {
+            onlineBox.innerHTML = '<div class="empty">Ничего не нашлось по запросу «' + q + '».<br>Попробуйте другое слово или другой источник.</div>';
             return;
           }
 
           onlineBox.innerHTML = '';
-          results.forEach(t => {
+          results.forEach(item => {
             const row = document.createElement('div');
             row.className = 'row';
 
             const cover = document.createElement('div');
             cover.className = 'cover-art';
-            const art = t.artwork ? (t.artwork['150x150'] || t.artwork['480x480']) : null;
-            cover.innerHTML = coverHTML(art, t.title, 18);
+            cover.innerHTML = coverHTML(item.art, item.title, 18);
 
             const main = document.createElement('div');
             main.className = 'row-main';
-            const artist = t.user ? t.user.name : '';
-            main.innerHTML = '<div class="row-title"></div>' + (artist ? '<div class="row-artist"></div>' : '');
-            main.querySelector('.row-title').textContent = t.title || 'Без названия';
-            if (artist) main.querySelector('.row-artist').textContent = artist;
+            main.innerHTML = '<div class="row-title"></div>' + (item.artist ? '<div class="row-artist"></div>' : '');
+            main.querySelector('.row-title').textContent = item.title;
+            if (item.artist) main.querySelector('.row-artist').textContent = item.artist;
 
             const playB = document.createElement('button');
             playB.className = 'row-action';
             playB.innerHTML = ICONS.playSm;
-            playB.addEventListener('click', (e) => { e.stopPropagation(); playOnline(t, art, artist); });
+            playB.addEventListener('click', (e) => { e.stopPropagation(); playOnlineItem(item); });
 
             const addB = document.createElement('button');
             addB.className = 'row-action add';
             addB.innerHTML = ICONS.plus;
-            addB.addEventListener('click', async (e) => {
-              e.stopPropagation();
-              addB.innerHTML = ICONS.ok;
-              await addOnline(t);
-              addB.innerHTML = ICONS.plus;
-            });
+            addB.addEventListener('click', (e) => { e.stopPropagation(); addOnline(item); });
 
             row.appendChild(cover);
             row.appendChild(main);
@@ -745,44 +1042,61 @@
             onlineBox.appendChild(row);
           });
         } catch (e) {
-          onlineBox.innerHTML = '<div class="status-line">Сервис поиска недоступен. Попробуйте ещё раз.</div>';
+          if (e.message === 'no-key') {
+            onlineBox.innerHTML = '<div class="online-hint">Для Jamendo нужен бесплатный ключ.<br>Получите его на devportal.jamendo.com и вставьте в константу JAMENDO_KEY в коде.<br>Пока переключитесь на Audius или Архив.</div>';
+          } else {
+            onlineBox.innerHTML = '<div class="status-line">Источник недоступен. Попробуйте ещё раз или смените источник.</div>';
+          }
         }
       }
 
-      function playOnline(t, art, artist) {
-        lastOnline = { id: t.id, title: t.title, artist: artist, art: art };
-        playOnlineTrack(lastOnline, false);
-      }
-
-      function playOnlineTrack(o, keepRadio) {
-        audio.src = streamUrl(o.id);
+      async function playOnlineItem(item) {
+        if (item.archiveId && !item.stream) {
+          onlineBox.innerHTML = '<div class="status-line">Готовлю «' + item.title + '»...</div>';
+          try { item = await resolveArchive(item); } catch (e) {}
+        }
+        if (!item.stream) {
+          onlineBox.innerHTML = '<div class="status-line">У этой записи нет воспроизводимого аудиофайла.</div>';
+          return;
+        }
+        ensureAudioGraph();
+        resumeAudioGraph();
+        lastOnline = item;
+        audio.src = item.stream;
+        audio.playbackRate = curRate;
         current = -1;
-        const label = o.artist ? o.artist + ' — ' + o.title : o.title;
+        const label = item.artist ? item.artist + ' — ' + item.title : item.title;
         miniTitle.textContent = label;
-        miniCover.innerHTML = coverHTML(o.art, o.title, 15);
-        fpTitle.textContent = o.title || 'Без названия';
-        fpArtist.textContent = o.artist || ' ';
-        fpCover.innerHTML = coverHTML(o.art, o.title, 84);
+        miniCover.innerHTML = coverHTML(item.art, item.title, 15);
+        fpTitle.textContent = item.title;
+        fpArtist.textContent = item.artist || ' ';
+        fpCover.innerHTML = coverHTML(item.art, item.title, 84);
         miniPlayer.classList.add('active');
-        applyGlow({ coverUrl: o.art, title: o.title });
+        applyGlow(item.art, item.title);
         audio.play();
-        if (!keepRadio) render();
       }
 
-      async function addOnline(t) {
+      async function addOnline(item) {
+        if (item.archiveId && !item.stream) {
+          try { item = await resolveArchive(item); } catch (e) {}
+        }
+        if (!item.stream) {
+          alert('У этой записи нет скачиваемого аудиофайла.');
+          return;
+        }
         const rec = {
           id: Date.now() + Math.random(),
           addedAt: Date.now(),
-          title: t.title || 'Без названия',
-          artist: t.user ? t.user.name : '',
-          coverUrl: t.artwork ? (t.artwork['480x480'] || t.artwork['150x150']) : null,
-          audiusId: t.id
+          title: item.title,
+          artist: item.artist || '',
+          coverUrl: item.art || null,
+          audiusId: item.audiusId || null,
+          src: item.audiodownload || item.stream
         };
         try {
-          const resp = await fetch(streamUrl(t.id));
+          const resp = await fetch(rec.src);
           if (resp.ok) rec.blob = await resp.blob();
         } catch (e) {}
-        if (!rec.blob) rec.src = streamUrl(t.id);
         await idbPut(rec);
         await loadTracks();
       }
@@ -790,10 +1104,9 @@
       // ---------- Радио по вайбу ----------
       async function radioNext() {
         if (!radioOn) return;
-        // 1. Если играет онлайн-трек — ищем похожие через Audius
         const curOnline = (current >= 0 && allTracks[current] && allTracks[current].audiusId)
           ? allTracks[current]
-          : (current === -1 && lastOnline ? { audiusId: lastOnline.id, title: lastOnline.title } : null);
+          : (current === -1 && lastOnline && lastOnline.audiusId ? lastOnline : null);
 
         if (curOnline && curOnline.audiusId) {
           try {
@@ -804,14 +1117,18 @@
               const list = (j.data || []).filter(x => x && x.id);
               if (list.length) {
                 const pick = list[Math.floor(Math.random() * list.length)];
-                const art = pick.artwork ? (pick.artwork['150x150'] || pick.artwork['480x480']) : null;
-                playOnline(pick, art, pick.user ? pick.user.name : '');
+                playOnlineItem({
+                  title: pick.title || 'Без названия',
+                  artist: pick.user ? pick.user.name : '',
+                  art: pick.artwork ? (pick.artwork['150x150'] || pick.artwork['480x480']) : null,
+                  stream: audiusStream(pick.id),
+                  audiusId: pick.id
+                });
                 return;
               }
             }
           } catch (e) {}
         }
-        // 2. Фолбэк: случайный трек из библиотеки
         if (allTracks.length > 1) playTrack(nextIndex());
       }
 
@@ -914,7 +1231,10 @@
         current = i;
         const track = allTracks[i];
 
+        ensureAudioGraph();
+        resumeAudioGraph();
         audio.src = track.src || URL.createObjectURL(track.blob);
+        audio.playbackRate = curRate;
         const label = track.artist ? track.artist + ' — ' + track.title : track.title;
 
         miniTitle.textContent = label;
@@ -924,14 +1244,14 @@
         fpCover.innerHTML = coverHTML(track.coverUrl, track.title, 84);
 
         miniPlayer.classList.add('active');
-        applyGlow(track);
+        applyGlow(track.coverUrl, track.title);
         audio.play();
         render();
       }
 
       function togglePlay() {
         if (current === -1) {
-          if (lastOnline) { playOnlineTrack(lastOnline, false); return; }
+          if (lastOnline) { playOnlineItem(lastOnline); return; }
           if (allTracks.length) playTrack(0);
           return;
         }
@@ -948,29 +1268,75 @@
         return current < allTracks.length - 1 ? current + 1 : 0;
       }
 
-      audio.addEventListener('play', () => {
-        playPauseBtn.innerHTML = ICONS.pause;
-        miniPlayBtn.innerHTML = ICONS.pauseSm;
-      });
-      audio.addEventListener('pause', () => {
-        playPauseBtn.innerHTML = ICONS.play;
-        miniPlayBtn.innerHTML = ICONS.playSm;
-      });
+      // ---------- Кроссфейд ----------
+      let crossActive = false;
+      let crossOld = null;
 
-      function syncProgress() {
-        if (!audio.duration) return;
-        const pct = (audio.currentTime / audio.duration * 100) + '%';
-        miniFill.style.width = pct;
-        fpFill.style.width = pct;
-        fpCur.textContent = fmtTime(audio.currentTime);
-        fpDur.textContent = fmtTime(audio.duration);
+      function startCrossfade(oldEl) {
+        crossActive = true;
+        crossOld = oldEl;
+        oldEl.volume = 1;
+        audio.volume = 0;
+        const steps = 30; // ~3 секунды затухания
+        let i = 0;
+        const iv = setInterval(() => {
+          i++;
+          const p = Math.min(1, i / steps);
+          oldEl.volume = Math.max(0, 1 - p);
+          audio.volume = Math.min(1, p);
+          if (i >= steps) {
+            clearInterval(iv);
+            oldEl.pause();
+            oldEl.volume = 1;
+            audio.volume = 1;
+            crossActive = false;
+            crossOld = null;
+          }
+        }, 100);
       }
-      audio.addEventListener('timeupdate', syncProgress);
 
-      audio.addEventListener('ended', () => {
-        if (audio.loop) return;
-        if (radioOn) { radioNext(); return; }
-        if (current >= 0) playTrack(nextIndex());
+      function tryCrossfade() {
+        if (!crossOn || crossActive || radioOn) return;
+        if (current < 0 || repeatOn || audio.loop) return;
+        if (!audio.duration || audio.duration < 12) return;
+        if (audio.duration - audio.currentTime > 3) return;
+        const next = nextIndex();
+        if (next === current) return;
+        const oldEl = audio;
+        audio = (audio === audioA) ? audioB : audioA;
+        playTrack(next);
+        startCrossfade(oldEl);
+      }
+
+      // ---------- События обоих аудиоэлементов ----------
+      [audioA, audioB].forEach(el => {
+        el.addEventListener('play', () => {
+          if (el !== audio) return;
+          playPauseBtn.innerHTML = ICONS.pause;
+          miniPlayBtn.innerHTML = ICONS.pauseSm;
+        });
+        el.addEventListener('pause', () => {
+          if (el !== audio) return;
+          playPauseBtn.innerHTML = ICONS.play;
+          miniPlayBtn.innerHTML = ICONS.playSm;
+          if (crossOld) crossOld.pause();
+        });
+        el.addEventListener('timeupdate', () => {
+          if (el !== audio) return;
+          if (!audio.duration) return;
+          const pct = (audio.currentTime / audio.duration * 100) + '%';
+          miniFill.style.width = pct;
+          fpFill.style.width = pct;
+          fpCur.textContent = fmtTime(audio.currentTime);
+          fpDur.textContent = fmtTime(audio.duration);
+          tryCrossfade();
+        });
+        el.addEventListener('ended', () => {
+          if (el !== audio) return;
+          if (audio.loop) return;
+          if (radioOn) { radioNext(); return; }
+          if (current >= 0) playTrack(nextIndex());
+        });
       });
 
       playPauseBtn.innerHTML = ICONS.play;
@@ -999,8 +1365,45 @@
       }
       fpTrackBar.addEventListener('click', (e) => seekFromEvent(e, fpTrackBar));
 
-      miniPlayer.addEventListener('click', () => fullPlayer.classList.add('active'));
-      document.getElementById('fpCloseBtn').addEventListener('click', () => fullPlayer.classList.remove('active'));
+      function openFull() {
+        fullPlayer.classList.add('active');
+        startViz();
+      }
+
+      // ---------- Свайп по мини-плееру ----------
+      let touchStart = null;
+      let swiped = false;
+
+      miniPlayer.addEventListener('touchstart', (e) => {
+        if (e.target.closest('button')) return;
+        touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        swiped = false;
+      }, { passive: true });
+
+      miniPlayer.addEventListener('touchend', (e) => {
+        if (!touchStart) return;
+        const dx = e.changedTouches[0].clientX - touchStart.x;
+        const dy = e.changedTouches[0].clientY - touchStart.y;
+        touchStart = null;
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+          swiped = true;
+          if (dx < 0) miniNextBtn.click();
+          else if (current > 0) playTrack(current - 1);
+          else if (allTracks.length) playTrack(allTracks.length - 1);
+        } else if (dy < -60 && Math.abs(dy) > Math.abs(dx)) {
+          swiped = true;
+          openFull();
+        }
+      }, { passive: true });
+
+      miniPlayer.addEventListener('click', () => {
+        if (swiped) { swiped = false; return; }
+        openFull();
+      });
+      document.getElementById('fpCloseBtn').addEventListener('click', () => {
+        fullPlayer.classList.remove('active');
+        stopViz();
+      });
 
       // ---------- Добавление файлов ----------
       const fileInput = document.getElementById('fileInput');
@@ -1027,6 +1430,179 @@
         }
         fileInput.value = '';
         await loadTracks();
+      });
+
+      // ---------- Экспорт и импорт библиотеки ----------
+      function blobToBase64(blob) {
+        return new Promise((resolve) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result.split(',')[1] || '');
+          r.onerror = () => resolve('');
+          r.readAsDataURL(blob);
+        });
+      }
+
+      document.getElementById('exportBtn').addEventListener('click', async () => {
+        const tracks = await idbGetAll();
+        if (!tracks.length) { alert('Библиотека пуста — нечего экспортировать.'); return; }
+        const out = [];
+        for (const t of tracks) {
+          const item = {
+            title: t.title, artist: t.artist || '', coverUrl: t.coverUrl || null,
+            addedAt: t.addedAt || 0, audiusId: t.audiusId || null, src: t.src || null,
+            mime: t.blob ? t.blob.type : null
+          };
+          if (t.blob) item.data = await blobToBase64(t.blob);
+          out.push(item);
+        }
+        const payload = { app: 'music-mini-app', version: 1, exportedAt: new Date().toISOString(), tracks: out };
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'library-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      });
+
+      document.getElementById('importBtn').addEventListener('click', () => importInput.click());
+
+      importInput.addEventListener('change', async () => {
+        const file = importInput.files[0];
+        if (!file) return;
+        try {
+          const j = JSON.parse(await file.text());
+          const list = j.tracks || [];
+          let added = 0;
+          for (const t of list) {
+            const rec = {
+              id: Date.now() + Math.random() + added,
+              addedAt: t.addedAt || Date.now(),
+              title: t.title || 'Без названия',
+              artist: t.artist || '',
+              coverUrl: t.coverUrl || null,
+              audiusId: t.audiusId || null,
+              src: t.src || null
+            };
+            if (t.data) {
+              const bin = atob(t.data);
+              const arr = new Uint8Array(bin.length);
+              for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+              rec.blob = new Blob([arr], { type: t.mime || 'audio/mpeg' });
+            }
+            await idbPut(rec);
+            added++;
+          }
+          await loadTracks();
+          alert('Импортировано треков: ' + added);
+        } catch (e) {
+          alert('Не удалось прочитать файл импорта.');
+        }
+        importInput.value = '';
+      });
+
+      // ---------- Шаринг-карточка ----------
+      shareBtn.addEventListener('click', async () => {
+        const track = current >= 0 ? allTracks[current] : lastOnline;
+        if (!track) return;
+
+        const title = track.title || 'Без названия';
+        const artist = (current >= 0 ? track.artist : (lastOnline ? lastOnline.artist : '')) || '';
+        const time = audio.duration ? fmtTime(audio.currentTime) + ' / ' + fmtTime(audio.duration) : '';
+
+        const c = document.createElement('canvas');
+        c.width = 720; c.height = 960;
+        const ctx = c.getContext('2d');
+
+        const [r, g, b] = glowColor;
+        const grad = ctx.createLinearGradient(0, 0, 0, 960);
+        grad.addColorStop(0, 'rgb(' + Math.min(255, r + 25) + ',' + Math.min(255, g + 25) + ',' + Math.min(255, b + 25) + ')');
+        grad.addColorStop(1, 'rgb(15,15,18)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 720, 960);
+
+        // Обложка
+        const coverImg = track.coverUrl ? await new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = track.coverUrl;
+        }) : null;
+
+        const coverSize = 440;
+        const covX = (720 - coverSize) / 2, covY = 120;
+        ctx.save();
+        ctx.beginPath();
+        const rad = 28;
+        ctx.moveTo(covX + rad, covY);
+        ctx.arcTo(covX + coverSize, covY, covX + coverSize, covY + coverSize, rad);
+        ctx.arcTo(covX + coverSize, covY + coverSize, covX, covY + coverSize, rad);
+        ctx.arcTo(covX, covY + coverSize, covX, covY, rad);
+        ctx.arcTo(covX, covY, covX + coverSize, covY, rad);
+        ctx.closePath();
+        ctx.clip();
+        if (coverImg) {
+          ctx.drawImage(coverImg, covX, covY, coverSize, coverSize);
+        } else {
+          const h = hashCode(title) % 360;
+          ctx.fillStyle = 'hsl(' + h + ', 30%, 18%)';
+          ctx.fillRect(covX, covY, coverSize, coverSize);
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          ctx.font = '700 150px -apple-system, Segoe UI, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText((title.charAt(0) || '?').toUpperCase(), 360, covY + coverSize / 2 + 50);
+        }
+        ctx.restore();
+
+        // Текст
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '700 40px -apple-system, Segoe UI, sans-serif';
+        const lines = [];
+        let line = '';
+        for (const word of title.split(' ')) {
+          const test = line ? line + ' ' + word : word;
+          if (ctx.measureText(test).width > 640 && line) { lines.push(line); line = word; }
+          else line = test;
+        }
+        if (line) lines.push(line);
+        let ty = 680;
+        lines.slice(0, 2).forEach(l => { ctx.fillText(l, 60, ty); ty += 50; });
+
+        if (artist) {
+          ctx.fillStyle = 'rgba(255,255,255,0.6)';
+          ctx.font = '400 28px -apple-system, Segoe UI, sans-serif';
+          ctx.fillText(artist, 60, ty + 12);
+        }
+        if (time) {
+          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.font = '600 24px -apple-system, Segoe UI, sans-serif';
+          ctx.fillText(time, 60, 900);
+        }
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.font = '600 22px -apple-system, Segoe UI, sans-serif';
+        ctx.fillText('Music Mini App', 660, 900);
+
+        const cardBlob = await new Promise((resolve) => c.toBlob(resolve, 'image/png'));
+        if (!cardBlob) return;
+        const file = new File([cardBlob], 'now-playing.png', { type: 'image/png' });
+
+        let shared = false;
+        try {
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: title, text: (artist ? artist + ' — ' : '') + title });
+            shared = true;
+          }
+        } catch (e) { if (e.name === 'AbortError') return; }
+
+        if (!shared) {
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(cardBlob);
+          a.download = 'now-playing.png';
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        }
       });
 
       // ---------- Старт ----------
